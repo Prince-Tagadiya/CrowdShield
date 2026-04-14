@@ -77,6 +77,21 @@ Generate a 2-sentence professional command center output for dispatch results.`;
 
 ---
 
+## 🔑 Test Accounts & Authentication
+For testing and demonstration, use the following credentials. You can also create new test accounts via the [Account Management Page](accounts.html).
+
+| Email Prefix | Role | Description |
+| :--- | :--- | :--- |
+| `admin@...` | **ADMIN** | Full command center access + AI simulation |
+| `fire@...` | **FIRE** | Incident response for fire units |
+| `med@...` | **MEDICAL** | Incident response for medical units |
+| `pol@...` | **POLICE** | Security and crowd management |
+| `user@...` | **ATTENDEE** | Public guidance and facility routing |
+
+**Default Password for all test accounts:** `password123` (or as set during creation)
+
+---
+
 ## 🔮 Future Scope
 * **IoT Sensor Integration:** Real-time occupancy and thermal sensors for automated surge detection.
 * **Firebase Real-Time Sync:** Moving from simulated JSON to live database streams for multi-device coordination.
