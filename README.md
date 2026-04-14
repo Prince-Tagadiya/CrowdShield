@@ -233,6 +233,16 @@ CrowdShield:
 
 ---
 
+# 🛡️ Engineering Standards
+
+Includes:
+- Modular architecture
+- Input validation & error handling
+- Basic testing functions for core logic
+- Secure environment-based configuration
+
+---
+
 # 🔮 Future Scope
 
 We can take this much further:
