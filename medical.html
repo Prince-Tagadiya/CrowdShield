@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CrowdShield – Medical Team Dashboard</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/team.css" />
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+      <div class="logo">CrowdShield</div>
+      <div class="nav-links">
+        <a href="/">Command Center</a>
+        <a href="/decision.html">Decision Engine</a>
+        <a href="/alerts.html">Alert System</a>
+        <a href="/fire.html">Fire</a>
+        <a href="/medical.html" class="active">Medical</a>
+        <a href="/police.html">Police</a>
+        <a href="/lost-found.html">Lost & Found</a>
+        <a href="/attendee.html">Attendee Mode</a>
+      </div>
+    </nav>
+
+    <div class="layout-container team-layout">
+      <main class="team-main medical-theme">
+        <header class="team-header">
+          <h1>🚑 Medical Team Dashboard</h1>
+          <div class="status-badge">Unit Status: Active</div>
+        </header>
+        
+        <div class="task-grid">
+          <section class="task-panel">
+            <h2>Medical Emergencies</h2>
+            <div id="medical-alerts-container" class="task-list">
+              <div class="task-item pending">
+                <div class="task-info">
+                  <h3>Fainting Incident - Gate B</h3>
+                  <p>Priority: Medium | Reported: 5 mins ago</p>
+                </div>
+                <div class="task-actions">
+                  <button class="btn btn-dispatch">Dispatch</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="task-panel">
+            <h2>Triage & Supply</h2>
+            <div class="status-box">
+              <p>Oxygen Level: 95%</p>
+              <p>First Aid Kits: 12 Available</p>
+              <p>Nearby Ambulances: 2 Stationed</p>
+            </div>
+          </section>
+        </div>
+
+        <section class="logs-panel">
+          <h2>Recent Patients</h2>
+          <ul class="log-list">
+            <li>Patient #422 (Heat Stroke) - Treated & Released</li>
+            <li>Patient #421 (Minor Cut) - Treated</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+    
+    <script type="module" src="/src/medical.js"></script>
+  </body>
+</html>

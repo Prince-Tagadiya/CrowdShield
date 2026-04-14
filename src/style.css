@@ -1,0 +1,261 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Top Navigation */
+.top-nav {
+  display: flex;
+  align-items: center;
+  background-color: #161b22;
+  padding: 0 20px;
+  height: 60px;
+  border-bottom: 1px solid #30363d;
+}
+
+.logo {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #58a6ff;
+  margin-right: 40px;
+}
+
+.nav-links a {
+  color: #8b949e;
+  text-decoration: none;
+  margin-right: 20px;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: #c9d1d9;
+}
+
+.nav-links a.active {
+  color: #fff;
+  font-weight: 600;
+  border-bottom: 2px solid #58a6ff;
+  padding-bottom: 18px;
+}
+
+/* Layout */
+.layout-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Stadium View */
+.stadium-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: #0d1117;
+  position: relative;
+}
+
+.stadium-container {
+  width: 100%;
+  max-width: 800px;
+  height: 100%;
+  max-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.stadium-shape {
+  width: 80%;
+  height: 80%;
+  border: 4px solid #30363d;
+  border-radius: 40%; /* Creates an oval shape */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #161b22;
+}
+
+/* Sections */
+.stadium-field {
+  width: 60%;
+  height: 60%;
+  border: 2px dashed #484f58;
+  border-radius: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+}
+
+.section {
+  background-color: rgba(48, 54, 61, 0.5);
+  border: 1px solid #484f58;
+  color: #c9d1d9;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  z-index: 10;
+}
+
+.section-row {
+  display: flex;
+  gap: 20px;
+}
+
+/* Gates (Positioned around the stadium) */
+.gate {
+  position: absolute;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  color: #0d1117;
+  transition: background-color 0.5s;
+  z-index: 10;
+}
+
+#gate-a {
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#gate-b {
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#gate-c {
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Crowd colors */
+.bg-low { background-color: #2ea043; } /* Green */
+.bg-medium { background-color: #d29922; } /* Yellow */
+.bg-high { background-color: #f85149; } /* Red */
+.text-low { color: #2ea043; }
+.text-medium { color: #d29922; }
+.text-high { color: #f85149; }
+
+/* Workers Layer */
+#workers-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 40%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.worker-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 2s ease-in-out, top 2s ease-in-out;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.worker-fire { background-color: #f85149; } /* Red */
+.worker-medical { background-color: #2ea043; } /* Green */
+.worker-police { background-color: #58a6ff; } /* Blue */
+
+/* Right Info Panel */
+.right-panel {
+  width: 320px;
+  background-color: #161b22;
+  border-left: 1px solid #30363d;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.panel-section h2 {
+  font-size: 1rem;
+  color: #8b949e;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panel-section ul {
+  list-style: none;
+  font-size: 0.95rem;
+}
+
+.panel-section li {
+  background-color: #0d1117;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+}
+
+#gate-status-list li span.gate-name {
+  font-weight: bold;
+}
+
+#alerts-list li {
+  border-left: 4px solid #f85149;
+}
+
+#ai-suggestions-list li {
+  border-left: 4px solid #58a6ff;
+  color: #58a6ff;
+}
+
+.panel-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn {
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.btn-warning {
+  background-color: #f85149;
+  color: #fff;
+}
+
+.btn-primary {
+  background-color: #238636;
+  color: #fff;
+}

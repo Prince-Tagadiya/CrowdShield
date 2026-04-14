@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CrowdShield – Command Center</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+      <div class="logo">CrowdShield – Command Center</div>
+      <div class="nav-links">
+        <a href="/" class="active">Command Center</a>
+        <a href="/decision.html">Decision Engine</a>
+        <a href="/alerts.html">Alert System</a>
+        <a href="/fire.html">Fire</a>
+        <a href="/medical.html">Medical</a>
+        <a href="/police.html">Police</a>
+        <a href="/lost-found.html">Lost & Found</a>
+        <a href="/attendee.html">Attendee Mode</a>
+      </div>
+    </nav>
+
+    <div class="layout-container">
+      <!-- Stadium View (Main Area) -->
+      <main class="stadium-view">
+        <div class="stadium-container" id="stadium">
+          <div class="stadium-shape">
+            
+            <!-- Sections -->
+            <div class="stadium-field">
+              <div class="section" id="sec-1">Section 1</div>
+              <div class="section-row">
+                <div class="section inner-sec" id="sec-2">Section 2</div>
+                <div class="section inner-sec" id="sec-3">Section 3</div>
+              </div>
+            </div>
+
+            <!-- Gates -->
+            <div class="gate" id="gate-a">Gate A</div>
+            <div class="gate" id="gate-b">Gate B</div>
+            <div class="gate" id="gate-c">Gate C</div>
+            
+            <!-- Workers Container -->
+            <div id="workers-layer"></div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Info Panel -->
+      <aside class="right-panel">
+        <section class="panel-section">
+          <h2>Gate Status</h2>
+          <ul id="gate-status-list"></ul>
+        </section>
+
+        <section class="panel-section">
+          <h2>Alerts</h2>
+          <ul id="alerts-list"></ul>
+        </section>
+
+        <section class="panel-section">
+          <h2>AI Suggestions</h2>
+          <ul id="ai-suggestions-list"></ul>
+        </section>
+
+        <div class="panel-actions">
+          <button class="btn btn-warning">Send Alert</button>
+          <button class="btn btn-primary">Dispatch Team</button>
+        </div>
+      </aside>
+    </div>
+    
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

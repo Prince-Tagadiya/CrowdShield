@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CrowdShield – Attendee Mode</title>
+    <!-- Use attendee.css for light mode -->
+    <link rel="stylesheet" href="/src/attendee.css" />
+  </head>
+  <body>
+    <!-- Top Navigation Bar (Dark) -->
+    <nav class="top-nav dark-nav">
+      <div class="logo">CrowdShield</div>
+      <div class="nav-links">
+        <a href="/">Command Center</a>
+        <a href="/decision.html">Decision Engine</a>
+        <a href="/alerts.html">Alert System</a>
+        <a href="#">Fire</a>
+        <a href="/fire.html">Fire</a>
+        <a href="/medical.html">Medical</a>
+        <a href="/police.html">Police</a>
+        <a href="/lost-found.html">Lost & Found</a>
+        <a href="/attendee.html" class="active">Attendee Mode</a>
+      </div>
+    </nav>
+
+    <!-- Main Content (Light Mode) -->
+    <div class="layout-container attendee-layout">
+      <main class="attendee-main">
+        <h1>Hi, what do you need?</h1>
+        <p class="subtitle">Quick assistance optimized for your stadium experience.</p>
+        
+        <div class="action-grid">
+          <button class="action-btn" id="btn-food">🍔 Find Food</button>
+          <button class="action-btn" id="btn-exit">🏃 Fastest Exit</button>
+          <button class="action-btn" id="btn-washroom">🚻 Nearest Washroom</button>
+          <button class="action-btn" id="btn-gate">🚪 Least Crowded Gate</button>
+        </div>
+
+        <div class="output-section" id="output-section" style="display: none;">
+          <div class="answer-box">
+             <div class="loader" id="loader" style="display: none;">Asking the CrowdShield AI...</div>
+             <p id="answer-text"></p>
+          </div>
+        </div>
+      </main>
+    </div>
+    
+    <script type="module" src="/src/attendee.js"></script>
+  </body>
+</html>

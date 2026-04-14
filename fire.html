@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CrowdShield – Fire Team Dashboard</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/team.css" />
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+      <div class="logo">CrowdShield</div>
+      <div class="nav-links">
+        <a href="/">Command Center</a>
+        <a href="/decision.html">Decision Engine</a>
+        <a href="/alerts.html">Alert System</a>
+        <a href="/fire.html" class="active">Fire</a>
+        <a href="/medical.html">Medical</a>
+        <a href="/police.html">Police</a>
+        <a href="/lost-found.html">Lost & Found</a>
+        <a href="/attendee.html">Attendee Mode</a>
+      </div>
+    </nav>
+
+    <div class="layout-container team-layout">
+      <main class="team-main fire-theme">
+        <header class="team-header">
+          <h1>🔥 Fire Team Dashboard</h1>
+          <div class="status-badge">Unit Status: Ready</div>
+        </header>
+        
+        <div class="task-grid">
+          <section class="task-panel">
+            <h2>Active Fire Alerts</h2>
+            <div id="fire-alerts-container" class="task-list">
+              <!-- Simulated Task -->
+              <div class="task-item pending">
+                <div class="task-info">
+                  <h3>Small Bin Fire - Section 2</h3>
+                  <p>Priority: High | Reported: 2 mins ago</p>
+                </div>
+                <div class="task-actions">
+                  <button class="btn btn-dispatch">Dispatch</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="task-panel">
+            <h2>Incident Map & Context</h2>
+            <div class="map-placeholder">
+              <div class="stadium-mini">
+                <div class="incident-marker" style="top: 30%; left: 20%;">🔥</div>
+              </div>
+              <p>Section 2 - West Corridor</p>
+            </div>
+          </section>
+        </div>
+
+        <section class="logs-panel">
+          <h2>Recent Resolves</h2>
+          <ul class="log-list">
+            <li>Equipment Check - Completed (09:00 AM)</li>
+            <li>Section 1 Drill - Completed (Yesterday)</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+    
+    <script type="module" src="/src/fire.js"></script>
+  </body>
+</html>

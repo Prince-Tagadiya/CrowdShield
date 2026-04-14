@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CrowdShield – Lost & Found System</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/lost.css" />
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+      <div class="logo">CrowdShield</div>
+      <div class="nav-links">
+        <a href="/">Command Center</a>
+        <a href="/decision.html">Decision Engine</a>
+        <a href="/alerts.html">Alert System</a>
+        <a href="/fire.html">Fire</a>
+        <a href="/medical.html">Medical</a>
+        <a href="/police.html">Police</a>
+        <a href="/lost-found.html" class="active">Lost & Found</a>
+        <a href="/attendee.html">Attendee Mode</a>
+      </div>
+    </nav>
+
+    <div class="layout-container lost-layout">
+      <main class="lost-main">
+        <h1>Lost & Found Coordination Node</h1>
+        
+        <div class="workflow-grid">
+          
+          <!-- Section 1: Lost Person Info -->
+          <section class="panel info-panel">
+            <h2>1. Lost Person Profile</h2>
+            <div class="profile-card">
+              <div class="image-placeholder">👤</div>
+              <div class="profile-details">
+                <p><strong>Name:</strong> Unknown Child</p>
+                <p><strong>Age:</strong> ~6 years old</p>
+                <p><strong>Last Seen:</strong> Section 2</p>
+                <p><strong>Parent Location:</strong> Section 5</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 2: Alert Actions -->
+          <section class="panel actions-panel">
+            <h2>2. Broadcast Actions</h2>
+            <p>Initiate stadium-wide search protocols.</p>
+            <div class="actions-group">
+              <button class="btn btn-warning" id="btn-broadcast">📢 Broadcast Alert to All Attendees</button>
+              <button class="btn btn-primary" id="btn-police">🚓 Notify Police & Security Team</button>
+            </div>
+            <div id="broadcast-status" class="status-msg" style="display: none;">
+              Alert actively routing through network...
+            </div>
+          </section>
+
+          <!-- Section 3: Found Update Panel -->
+          <section class="panel update-panel">
+            <h2>3. Target Recovery Log</h2>
+            <p>Enter the exact location where the lost individual has been identified.</p>
+            
+            <div class="input-group">
+              <input type="text" id="found-location-input" placeholder="e.g. Section 3, Gate B..." />
+              <button class="btn btn-success" id="btn-report-found">Report Found</button>
+            </div>
+            
+            <div id="ai-loader" class="loader" style="display:none;">CrowdShield optimizing parental routing...</div>
+            <div id="system-response" class="response-box" style="display: none;">
+              <!-- Handled by JS -->
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+    
+    <script type="module" src="/src/lost.js"></script>
+  </body>
+</html>

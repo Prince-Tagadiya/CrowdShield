@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CrowdShield – Police Team Dashboard</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/team.css" />
+  </head>
+  <body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+      <div class="logo">CrowdShield</div>
+      <div class="nav-links">
+        <a href="/">Command Center</a>
+        <a href="/decision.html">Decision Engine</a>
+        <a href="/alerts.html">Alert System</a>
+        <a href="/fire.html">Fire</a>
+        <a href="/medical.html">Medical</a>
+        <a href="/police.html" class="active">Police</a>
+        <a href="/lost-found.html">Lost & Found</a>
+        <a href="/attendee.html">Attendee Mode</a>
+      </div>
+    </nav>
+
+    <div class="layout-container team-layout">
+      <main class="team-main police-theme">
+        <header class="team-header">
+          <h1>🚓 Police Team Dashboard</h1>
+          <div class="status-badge">Unit Status: Patrol</div>
+        </header>
+        
+        <div class="task-grid">
+          <section class="task-panel">
+            <h2>Security Alerts</h2>
+            <div id="police-alerts-container" class="task-list">
+              <div class="task-item pending">
+                <div class="task-info">
+                  <h3>Crowd Congestion - Section 1</h3>
+                  <p>Priority: Medium | Reported: 1 min ago</p>
+                </div>
+                <div class="task-actions">
+                  <button class="btn btn-dispatch">Dispatch</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="task-panel">
+            <h2>Unit Oversight</h2>
+            <div class="status-box">
+              <p>Foot Patrols: 15 active</p>
+              <p>CCTV Status: All functional</p>
+              <p>Gate Security: Nominal</p>
+            </div>
+          </section>
+        </div>
+
+        <section class="logs-panel">
+          <h2>Shift Log</h2>
+          <ul class="log-list">
+            <li>Gate A Entry Check - All Clear</li>
+            <li>North Perimeter Sweep - All Clear</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+    
+    <script type="module" src="/src/police.js"></script>
+  </body>
+</html>
