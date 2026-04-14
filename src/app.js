@@ -163,9 +163,11 @@ function showView(viewId) {
 
   if (viewId === 'login-screen') {
     DOM['app-nav']?.classList.add('hidden');
+    DOM['dashboard-container']?.classList.add('hidden');
     document.body.classList.remove('light-mode');
   } else {
     DOM['app-nav']?.classList.remove('hidden');
+    DOM['dashboard-container']?.classList.remove('hidden');
     if (DOM['user-email']) DOM['user-email'].textContent = state.user.email;
     if (DOM['role-badge']) DOM['role-badge'].textContent = state.role.toUpperCase();
   }
