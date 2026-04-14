@@ -32,18 +32,17 @@
         <p class="subtitle">AI-Powered Security Gateway</p>
         <form id="login-form">
           <label for="email" class="sr-only">Email</label>
-          <input type="email" id="email" placeholder="Email (admin@ / fire@ / med@ / pol@ / user@)" required>
+          <input type="text" id="email" placeholder="Email (e.g. admin@test.com)" required>
           
           <label for="password" class="sr-only">Password</label>
           <input type="password" id="password" placeholder="Password" required>
           
           <button type="submit" id="login-btn" aria-label="Click to log in">Secure Login</button>
+          <div id="login-error" style="color: var(--fire); font-size: 0.8rem; margin-top: 10px; display: none;"></div>
         </form>
         <div class="role-hint">
-          Need test accounts?<br>
-          <a href="/accounts.html" style="color: var(--accent); text-decoration: none; font-weight: bold; margin-top: 5px; display: inline-block;">Setup & Provision Now &rarr;</a>
+          Test Emails: admin@test.com, fire@test.com, med@test.com, pol@test.com, user@test.com
         </div>
-      </div>
       </div>
     </section>
 
@@ -69,16 +68,21 @@
           <section class="ai-console-panel" aria-label="AI Operational Command">
             <div class="ai-input-wrapper">
               <label for="ai-command-input" class="sr-only">Enter AI Command</label>
-              <textarea id="ai-command-input" placeholder="Enter incident report (e.g., 'Fire in Sec 2' or 'Send help to Gate B')"></textarea>
-              <button id="ai-submit-btn" aria-label="Send command to AI">Analyze & Execute</button>
+              <textarea id="ai-command-input" placeholder="Admin Command Console (e.g., 'Deploy fire team to Gate A')"></textarea>
+              <button id="ai-submit-btn" aria-label="Send command to AI">Execute</button>
             </div>
             <div id="ai-response-log" class="ai-log" role="log" aria-live="polite">
-              Waiting for operational command...
+              Operational...
             </div>
           </section>
 
-          <div class="stadium-oval" id="stadium-map" role="img" aria-label="Live stadium map showing gates and worker locations">
-            <!-- Layers via JS -->
+          <div class="stadium-oval" id="stadium-map" role="img" aria-label="Live stadium map showing gates and worker locations"></div>
+          
+          <!-- Incoming Reports Feed -->
+          <div id="incoming-reports" class="alert-card hidden" style="position: absolute; bottom: 20px; left: 20px; width: 350px; border-color: var(--warning);">
+            <h4>⚠️ New Report Received</h4>
+            <p id="report-summary"></p>
+            <div id="report-actions" style="margin-top:10px;"></div>
           </div>
           
           <div id="active-alert-widget" class="alert-card hidden" role="alert"></div>
@@ -107,6 +111,16 @@
           <button class="big-btn" id="btn-guide-exit" aria-label="Find fastest exit">🏃 Fastest Exit</button>
           <button class="big-btn" id="btn-guide-washroom" aria-label="Find nearest washroom">🚻 Washrooms</button>
           <button class="big-btn" id="btn-guide-gate" aria-label="Find least crowded gate">🚪 Gates</button>
+        </div>
+
+        <div class="report-box" style="margin-top: 40px; width: 100%; max-width: 600px; text-align: left;">
+          <h3>Report an Issue</h3>
+          <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">Spotted something? Let the AI Command Center know.</p>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="report-input" placeholder="Describe the issue (e.g. 'Fire at Section 2')" style="flex:1; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+            <button id="report-submit-btn" class="btn-action btn-dispatch" style="padding: 12px 20px;">Send Report</button>
+          </div>
+          <div id="report-feedback" style="margin-top:10px; font-size: 0.9rem; font-style: italic; color: var(--medical); display: none;">Report sent to Command Center.</div>
         </div>
         
         <div id="attendee-result" class="result-box hidden" role="region" aria-live="polite"></div>

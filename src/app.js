@@ -1,26 +1,72 @@
+/**
+ * app.js — Main Application Controller
+ * 
+ * Purpose: Manages authentication, UI routing, simulation,
+ *          and connects all modules together.
+ * 
+ * Architecture:
+ *   data.js     → Constants & mock data
+ *   decision.js → Scoring & routing logic
+ *   ai.js       → Gemini API integration
+ *   alert.js    → Firestore persistence & real-time sync
+ *   firebase.js → Auth & database config
+ *   tests.js    → Automated validation
+ */
+
 import { auth, signInWithEmailAndPassword, onAuthStateChanged, signOut, identifyUserRole } from './firebase.js';
-import { GATES, WORKERS, TEAM_ROLES } from './data.js';
-import { findOptimalOption, validateLocation } from './logic.js';
-import { parseIncidentCommand } from './ai.js';
+import { GATES, WORKERS, TEAM_ROLES, DEMO_EMAILS } from './data.js';
+import { getBestGate, validateLocation } from './decision.js';
+import { processAIInput } from './ai.js';
+import { routeAlert, saveAlertToDB, updateAlertStatus } from './alert.js';
 import { runAllTests } from './tests.js';
 
-// GLOBAL STATE
+// --- GLOBAL APPLICATION STATE --- //
 const state = {
   user: null,
   role: null,
-  gates: [...GATES],
-  workers: [...WORKERS],
+  gates: GATES.map(g => ({ ...g })),     // Mutable copy
+  workers: WORKERS.map(w => ({ ...w })),  // Mutable copy
   activeAlert: null,
-  pendingReport: null 
+  pendingReport: null,
+  pendingAIAction: null
 };
 
-// --- INITIALIZATION --- //
+// Cache frequently accessed DOM elements
+const DOM = {};
+
+// ========== INITIALIZATION ========== //
+
 document.addEventListener('DOMContentLoaded', () => {
+  cacheDOMElements();
   setupEventListeners();
   runAllTests();
 });
 
-// --- AUTHENTICATION --- //
+/**
+ * Caches references to frequently used DOM elements.
+ * Purpose: Avoid repeated document.getElementById calls (efficiency).
+ */
+function cacheDOMElements() {
+  const ids = [
+    'login-form', 'email', 'password', 'login-btn', 'login-error',
+    'app-nav', 'user-email', 'role-badge', 'logout-btn',
+    'login-screen', 'dashboard-container',
+    'view-admin', 'view-team', 'view-attendee',
+    'gate-stats', 'stadium-map', 'ai-command-input', 'ai-response-log',
+    'ai-submit-btn', 'trigger-event-btn',
+    'incoming-reports', 'report-summary', 'report-actions',
+    'active-alert-widget', 'team-alerts', 'team-title',
+    'emergency-banner', 'attendee-result',
+    'report-input', 'report-submit-btn', 'report-feedback',
+    'confirm-modal', 'modal-title', 'modal-desc',
+    'modal-confirm', 'modal-cancel'
+  ];
+  ids.forEach(id => { DOM[id] = document.getElementById(id); });
+}
+
+// ========== AUTHENTICATION ========== //
+
+/** Firebase auth state observer */
 onAuthStateChanged(auth, (user) => {
   if (user) {
     state.user = user;
@@ -32,90 +78,102 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
+/**
+ * Binds all interactive event listeners.
+ * Called once on DOMContentLoaded.
+ */
 function setupEventListeners() {
-  document.getElementById('login-form')?.addEventListener('submit', handleLogin);
-  document.getElementById('logout-btn')?.addEventListener('click', () => {
-    signOut(auth);
-    resetState();
-    showView('login-screen');
+  DOM['login-form']?.addEventListener('submit', handleLogin);
+  DOM['logout-btn']?.addEventListener('click', handleLogout);
+  DOM['trigger-event-btn']?.addEventListener('click', triggerRandomSimulation);
+  DOM['ai-submit-btn']?.addEventListener('click', () => handleAICommand('admin'));
+  DOM['report-submit-btn']?.addEventListener('click', () => handleAICommand('attendee'));
+
+  // Attendee quick-guide buttons
+  ['food', 'exit', 'washroom', 'gate'].forEach(type => {
+    document.getElementById(`btn-guide-${type}`)?.addEventListener('click', () => provideGuidance(type));
   });
-  document.getElementById('trigger-event-btn')?.addEventListener('click', triggerRandomSimulation);
-  document.getElementById('ai-submit-btn')?.addEventListener('click', () => handleAICommand('admin'));
-  
-  // Attendee Report
-  document.getElementById('report-submit-btn')?.addEventListener('click', () => handleAICommand('attendee'));
 
-  document.getElementById('btn-guide-food')?.addEventListener('click', () => provideGuidance('food'));
-  document.getElementById('btn-guide-exit')?.addEventListener('click', () => provideGuidance('exit'));
-  document.getElementById('btn-guide-washroom')?.addEventListener('click', () => provideGuidance('washroom'));
-  document.getElementById('btn-guide-gate')?.addEventListener('click', () => provideGuidance('gate'));
-
-  document.getElementById('modal-confirm')?.addEventListener('click', executePendingAction);
-  document.getElementById('modal-cancel')?.addEventListener('click', closeConfirmModal);
+  DOM['modal-confirm']?.addEventListener('click', executePendingAction);
+  DOM['modal-cancel']?.addEventListener('click', closeConfirmModal);
 }
 
+/**
+ * Handles login form submission.
+ * Uses demo bypass for test emails, falls back to Firebase Auth.
+ * @param {Event} e - Form submit event
+ */
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('email').value.trim().toLowerCase();
-  const pass = document.getElementById('password').value;
-  const btn = document.getElementById('login-btn');
-  const errorEl = document.getElementById('login-error');
+  const email = DOM['email'].value.trim().toLowerCase();
+  const pass  = DOM['password'].value;
+  const btn   = DOM['login-btn'];
+  const err   = DOM['login-error'];
 
-  // Basic validation
+  // Input validation
   if (!email.includes('@')) {
-    errorEl.textContent = "Please enter a valid email (e.g. admin@test.com)";
-    errorEl.style.display = 'block';
+    showError(err, 'Please enter a valid email (e.g. admin@test.com)');
     return;
   }
 
-  errorEl.style.display = 'none';
+  hideError(err);
   btn.disabled = true;
-  btn.textContent = "Authenticating...";
+  btn.textContent = 'Authenticating...';
 
-  // DEMO MODE BYPASS: Allow seamless entry for test emails without Firebase Auth setup
-  const demoEmails = ['admin@test.com', 'fire@test.com', 'med@test.com', 'pol@test.com', 'user@test.com'];
-  
-  if (demoEmails.includes(email)) {
+  // Demo bypass for test emails
+  if (DEMO_EMAILS.includes(email)) {
     setTimeout(() => {
-      state.user = { email: email, uid: 'demo-mode' };
+      state.user = { email, uid: 'demo-mode' };
       state.role = identifyUserRole(email);
-      renderDashboard();
-      
-      // Reset button state for next time
       btn.disabled = false;
-      btn.textContent = "Secure Login";
-    }, 600); // Small delay to show "Authenticating..."
+      btn.textContent = 'Secure Login';
+      renderDashboard();
+    }, 500);
     return;
   }
 
-  // Fallback to real Firebase Auth for custom emails
+  // Real Firebase Auth
   try {
     await signInWithEmailAndPassword(auth, email, pass);
-  } catch (err) {
+  } catch (error) {
     btn.disabled = false;
-    btn.textContent = "Secure Login";
-    errorEl.textContent = "Login failed. Ensure you use one of the provided test emails.";
-    errorEl.style.display = 'block';
-    console.error(err);
+    btn.textContent = 'Secure Login';
+    showError(err, 'Login failed. Use a test email or check credentials.');
+    console.error('[Auth]', error.message);
   }
 }
 
-// --- VIEW MANAGEMENT --- //
+/** Logs user out and resets UI */
+function handleLogout() {
+  signOut(auth);
+  resetState();
+  showView('login-screen');
+}
+
+// ========== VIEW MANAGEMENT ========== //
+
+/**
+ * Shows the specified view and hides all others.
+ * @param {string} viewId - DOM element ID to show
+ */
 function showView(viewId) {
+  // Hide all views
   document.querySelectorAll('.view, #login-screen').forEach(el => el.classList.add('hidden'));
   document.getElementById(viewId)?.classList.remove('hidden');
-  
-  const nav = document.getElementById('app-nav');
+
   if (viewId === 'login-screen') {
-    nav.classList.add('hidden');
+    DOM['app-nav']?.classList.add('hidden');
     document.body.classList.remove('light-mode');
   } else {
-    nav.classList.remove('hidden');
-    document.getElementById('user-email').textContent = state.user.email;
-    document.getElementById('role-badge').textContent = state.role.toUpperCase();
+    DOM['app-nav']?.classList.remove('hidden');
+    if (DOM['user-email']) DOM['user-email'].textContent = state.user.email;
+    if (DOM['role-badge']) DOM['role-badge'].textContent = state.role.toUpperCase();
   }
 }
 
+/**
+ * Routes user to the correct dashboard based on role.
+ */
 function renderDashboard() {
   if (state.role === TEAM_ROLES.ADMIN) {
     showView('view-admin');
@@ -123,6 +181,7 @@ function renderDashboard() {
     startSimulationLoop();
   } else if ([TEAM_ROLES.FIRE, TEAM_ROLES.MEDICAL, TEAM_ROLES.POLICE].includes(state.role)) {
     showView('view-team');
+    if (DOM['team-title']) DOM['team-title'].textContent = `${state.role.toUpperCase()} Operations`;
     renderTeamAlerts();
   } else {
     showView('view-attendee');
@@ -130,35 +189,46 @@ function renderDashboard() {
   }
 }
 
-// --- AI COMMAND & REPORTING --- //
+// ========== AI COMMAND & REPORTING ========== //
+
+/**
+ * Processes an AI command from either Admin console or Attendee report.
+ * @param {string} source - 'admin' or 'attendee'
+ */
 async function handleAICommand(source) {
-  const inputEl = source === 'admin' ? document.getElementById('ai-command-input') : document.getElementById('report-input');
-  const logEl = document.getElementById('ai-response-log');
-  const feedbackEl = document.getElementById('report-feedback');
-  const command = inputEl.value.trim();
-  
+  const inputEl = source === 'admin' ? DOM['ai-command-input'] : DOM['report-input'];
+  const command = inputEl?.value.trim();
   if (!command) return;
 
+  // UI feedback
   if (source === 'attendee') {
-    feedbackEl.style.display = 'block';
-    feedbackEl.textContent = "Processing report with CrowdShield AI...";
+    setFeedback(DOM['report-feedback'], 'Processing with CrowdShield AI...', true);
   } else {
-    logEl.innerHTML = "<strong>[AI]:</strong> Analyzing command context...";
+    if (DOM['ai-response-log']) DOM['ai-response-log'].innerHTML = '<strong>[AI]:</strong> Analyzing...';
   }
-  
+
+  // Send to Gemini with current telemetry
   const telemetry = { gates: state.gates, activeAlert: state.activeAlert };
-  const result = await parseIncidentCommand(command, telemetry);
-  
+  const result = await processAIInput(command, telemetry);
   inputEl.value = '';
-  
+
   if (source === 'attendee') {
-    // Role-Based Logic: Attendee reports go to Admin Pending Feed
+    // Attendee reports go to admin pending queue
     state.pendingReport = { ...result, source: 'Attendee' };
     updateAdminReportFeed();
-    feedbackEl.textContent = "Report received by Command Center. Security is analyzing.";
-    setTimeout(() => { if(feedbackEl) feedbackEl.style.display = 'none'; }, 5000);
+    setFeedback(DOM['report-feedback'], 'Report sent to Command Center.', true);
+    setTimeout(() => setFeedback(DOM['report-feedback'], '', false), 5000);
+
+    // Also save to Firestore
+    await saveAlertToDB({
+      type: result.intent, location: result.location,
+      teams: result.teams, message: result.response
+    });
   } else {
-    // Admin directly triggers confirmation or execution
+    // Admin: show AI response, then confirm or execute
+    if (DOM['ai-response-log']) {
+      DOM['ai-response-log'].innerHTML = `<strong>[AI]:</strong> ${result.response}`;
+    }
     if (result.isCritical) {
       showConfirmModal(result);
     } else {
@@ -167,35 +237,21 @@ async function handleAICommand(source) {
   }
 }
 
-function updateAdminReportFeed() {
-  const feed = document.getElementById('incoming-reports');
-  const summary = document.getElementById('report-summary');
-  const actions = document.getElementById('report-actions');
-  
-  if (!state.pendingReport) {
-    feed.classList.add('hidden');
-    return;
-  }
+// ========== GOVERNANCE (CONFIRMATION MODAL) ========== //
 
-  feed.classList.remove('hidden');
-  summary.innerHTML = `<strong>${state.pendingReport.intent.toUpperCase()}</strong>: ${state.pendingReport.location}<br><small>${state.pendingReport.response}</small>`;
-  
-  actions.innerHTML = `
-    <button class="btn-action btn-dispatch" onclick="window.app.approveReport()" style="font-size: 0.8rem; padding: 5px 10px;">Execute AI Suggestions</button>
-    <button class="btn-action" onclick="window.app.dismissReport()" style="font-size: 0.8rem; padding: 5px 10px; background: #333; color: #fff;">Dismiss</button>
-  `;
-}
-
+/**
+ * Shows a modal asking admin to confirm a critical action.
+ * @param {object} action - AI analysis result with isCritical=true
+ */
 function showConfirmModal(action) {
   state.pendingAIAction = action;
-  const modal = document.getElementById('confirm-modal');
-  document.getElementById('modal-title').textContent = `🚨 Confirm ${action.intent.toUpperCase()}`;
-  document.getElementById('modal-desc').textContent = action.response;
-  modal.showModal();
+  if (DOM['modal-title']) DOM['modal-title'].textContent = `🚨 Confirm: ${(action.intent || 'ALERT').toUpperCase()}`;
+  if (DOM['modal-desc'])  DOM['modal-desc'].textContent = action.response;
+  DOM['confirm-modal']?.showModal();
 }
 
 function closeConfirmModal() {
-  document.getElementById('confirm-modal').close();
+  DOM['confirm-modal']?.close();
   state.pendingAIAction = null;
 }
 
@@ -206,179 +262,228 @@ function executePendingAction() {
   }
 }
 
-function executeAction(action) {
-  state.activeAlert = {
-    id: Date.now(),
-    type: action.intent,
-    location: validateLocation(action.location),
-    teams: action.teams,
-    msg: action.response,
-    status: 'Pending'
-  };
-
+/**
+ * Finalizes an action: creates alert, updates UI, saves to Firestore.
+ * @param {object} action - { intent, location, teams, response }
+ */
+async function executeAction(action) {
+  state.activeAlert = routeAlert(action);
   renderAlertWidget();
   updateAttendeeBanner();
-  
-  // If we are currently in a team view, refresh it
+
+  // Save to Firestore
+  const docId = await saveAlertToDB({
+    type: state.activeAlert.type,
+    location: state.activeAlert.location,
+    teams: state.activeAlert.teams,
+    message: state.activeAlert.msg
+  });
+  if (docId) state.activeAlert.firestoreId = docId;
+
   if (['fire', 'medical', 'police'].includes(state.role)) renderTeamAlerts();
 }
 
-// --- TEAM DASHBOARD ACTIONS --- //
-function renderTeamAlerts() {
-  const container = document.getElementById('team-alerts');
-  if (!container) return;
+// ========== ADMIN FEATURES ========== //
 
-  if (!state.activeAlert || !state.activeAlert.teams.includes(state.role)) {
-    container.innerHTML = '<p>Standby: No priority alerts for your unit.</p>';
+function updateAdminReportFeed() {
+  if (!state.pendingReport) {
+    DOM['incoming-reports']?.classList.add('hidden');
     return;
   }
-
-  const a = state.activeAlert;
-  container.innerHTML = `
-    <article class="alert-card ${state.role.slice(0,3)}">
-      <h3>Priority: ${a.type.toUpperCase()}</h3>
-      <p><strong>Location:</strong> ${a.location}</p>
-      <p><strong>Orders:</strong> ${a.msg}</p>
-      <p><strong>Status:</strong> <span id="task-status">${a.status}</span></p>
-      <div class="modal-actions">
-        <button class="btn-action btn-dispatch" onclick="window.app.teamAction('Dispatched')">Dispatch</button>
-        <button class="btn-action btn-resolve" onclick="window.app.teamAction('Resolved')">Mark Resolved</button>
-      </div>
-    </article>
-  `;
+  DOM['incoming-reports']?.classList.remove('hidden');
+  if (DOM['report-summary']) {
+    DOM['report-summary'].innerHTML = `<strong>${(state.pendingReport.intent || '').toUpperCase()}</strong>: ${state.pendingReport.location}<br><small>${state.pendingReport.response}</small>`;
+  }
+  if (DOM['report-actions']) {
+    DOM['report-actions'].innerHTML = `
+      <button class="btn-action btn-dispatch" onclick="window.app.approveReport()" style="font-size:0.8rem;padding:5px 10px;">Execute</button>
+      <button class="btn-action" onclick="window.app.dismissReport()" style="font-size:0.8rem;padding:5px 10px;background:#333;color:#fff;">Dismiss</button>`;
+  }
 }
 
-// --- ADMIN MAP & SIMULATION --- //
+/** Renders the stadium map with gates and worker dots */
 function initAdminMap() {
-  const map = document.getElementById('stadium-map');
-  if(!map) return;
+  const map = DOM['stadium-map'];
+  if (!map) return;
   map.innerHTML = '';
+
+  // Place gates around the oval
   state.gates.forEach((g, i) => {
     const el = document.createElement('div');
     el.className = `gate bg-${g.level}`;
     el.textContent = g.name;
-    const angles = [180, 270, 0];
-    const angle = angles[i] * (Math.PI / 180);
+    const angle = [180, 270, 0][i] * (Math.PI / 180);
     el.style.left = `${50 + 45 * Math.cos(angle)}%`;
-    el.style.top = `${50 + 45 * Math.sin(angle)}%`;
+    el.style.top  = `${50 + 45 * Math.sin(angle)}%`;
     map.appendChild(el);
   });
+
+  // Place worker dots
   state.workers.forEach(w => {
     const dot = document.createElement('div');
     dot.id = `worker-${w.id}`;
     dot.className = 'worker-dot';
-    dot.style.background = `var(--${w.role === 'fire' ? 'fire' : (w.role === 'medical' ? 'medical' : 'police')})`;
+    dot.style.background = `var(--${w.role})`;
     dot.style.left = `${w.x}%`;
-    dot.style.top = `${w.y}%`;
+    dot.style.top  = `${w.y}%`;
     map.appendChild(dot);
   });
+
   updateGateStats();
 }
 
+/**
+ * Runs simulation loop: moves workers and fluctuates crowd levels.
+ * Interval: 3 seconds. Only active for Admin role.
+ */
 function startSimulationLoop() {
-  if (window.simInterval) clearInterval(window.simInterval);
-  window.simInterval = setInterval(() => {
+  if (window._simInterval) clearInterval(window._simInterval);
+
+  window._simInterval = setInterval(() => {
     if (state.role !== TEAM_ROLES.ADMIN) return;
+
+    // Move workers (small random displacement)
     state.workers.forEach(w => {
       w.x = Math.max(15, Math.min(85, w.x + (Math.random() - 0.5) * 5));
       w.y = Math.max(15, Math.min(85, w.y + (Math.random() - 0.5) * 5));
       const dot = document.getElementById(`worker-${w.id}`);
-      if (dot) {
-        dot.style.left = `${w.x}%`;
-        dot.style.top = `${w.y}%`;
-      }
+      if (dot) { dot.style.left = `${w.x}%`; dot.style.top = `${w.y}%`; }
     });
+
+    // Fluctuate gate crowd levels
     state.gates.forEach(g => {
-      g.wait = Math.max(1, Math.min(45, g.wait + (Math.random() > 0.5 ? 1 : -1)));
+      g.wait  = Math.max(1, Math.min(45, g.wait + (Math.random() > 0.5 ? 1 : -1)));
       g.level = g.wait > 20 ? 'high' : (g.wait > 10 ? 'med' : 'low');
     });
+
     updateGateStats();
   }, 3000);
 }
 
-// --- UI UPDATES --- //
+// ========== UI RENDER FUNCTIONS ========== //
+
+/** Updates the gate statistics sidebar */
 function updateGateStats() {
-  const container = document.getElementById('gate-stats');
-  if (!container) return;
-  container.innerHTML = state.gates.map(g => `
-    <div class="stat-item" style="margin-bottom:10px;">
-      <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+  const el = DOM['gate-stats'];
+  if (!el) return;
+  el.innerHTML = state.gates.map(g => {
+    const color = g.level === 'high' ? 'fire' : (g.level === 'med' ? 'warning' : 'medical');
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;">
         <span>${g.name}</span><span>${g.wait}m</span>
       </div>
-      <div style="height:4px; background:#333; border-radius:2px;">
-        <div style="height:100%; width:${g.wait*2}%; background:var(--${g.level === 'high' ? 'fire' : (g.level === 'med' ? 'warning' : 'medical')});"></div>
+      <div style="height:4px;background:#333;border-radius:2px;">
+        <div style="height:100%;width:${g.wait * 2}%;background:var(--${color});"></div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
+/** Shows the active alert widget on the admin map */
 function renderAlertWidget() {
-  const widget = document.getElementById('active-alert-widget');
-  if (!widget || !state.activeAlert) return;
-  widget.classList.remove('hidden');
-  widget.innerHTML = `
+  const w = DOM['active-alert-widget'];
+  if (!w || !state.activeAlert) return;
+  w.classList.remove('hidden');
+  w.innerHTML = `
     <h3>⚠️ ${state.activeAlert.type.toUpperCase()}</h3>
-    <p>${state.activeAlert.location} - <strong>${state.activeAlert.status}</strong></p>
+    <p>${state.activeAlert.location} — <strong>${state.activeAlert.status}</strong></p>
     <small>${state.activeAlert.msg}</small>
-    <button onclick="window.app.clearAlert()" style="margin-top:10px; width:100%; background:#333; color:#fff; border:none; padding:5px; border-radius:4px; cursor:pointer;">Dismiss</button>
-  `;
+    <button onclick="window.app.clearAlert()" style="margin-top:10px;width:100%;background:#333;color:#fff;border:none;padding:5px;border-radius:4px;cursor:pointer;">Dismiss</button>`;
 }
 
+/** Renders alerts visible to the current team role */
+function renderTeamAlerts() {
+  const c = DOM['team-alerts'];
+  if (!c) return;
+  if (!state.activeAlert || !state.activeAlert.teams.includes(state.role)) {
+    c.innerHTML = '<p>Standby: No priority alerts for your unit.</p>';
+    return;
+  }
+  const a = state.activeAlert;
+  c.innerHTML = `
+    <article class="alert-card ${state.role.slice(0,3)}">
+      <h3>Priority: ${a.type.toUpperCase()}</h3>
+      <p><strong>Location:</strong> ${a.location}</p>
+      <p><strong>Orders:</strong> ${a.msg}</p>
+      <p><strong>Status:</strong> <span>${a.status}</span></p>
+      <div class="modal-actions">
+        <button class="btn-action btn-dispatch" onclick="window.app.teamAction('Dispatched')">Dispatch</button>
+        <button class="btn-action btn-resolve" onclick="window.app.teamAction('Resolved')">Mark Resolved</button>
+      </div>
+    </article>`;
+}
+
+/**
+ * Provides instant guidance to attendees using decision engine.
+ * @param {string} type - food | exit | washroom | gate
+ */
 function provideGuidance(type) {
-  const best = findOptimalOption(state.gates);
-  const resultEl = document.getElementById('attendee-result');
-  resultEl.classList.remove('hidden');
-  resultEl.innerHTML = `<strong>Best ${type}:</strong> ${best.name} (${best.wait} min wait time).`;
+  const best = getBestGate(state.gates);
+  const el = DOM['attendee-result'];
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.innerHTML = `<strong>Best ${type}:</strong> ${best.name} (${best.wait} min wait).`;
 }
 
+/** Shows/hides the emergency banner in attendee mode */
 function updateAttendeeBanner() {
-  const banner = document.getElementById('emergency-banner');
-  if (!banner) return;
-  if (state.activeAlert && (state.activeAlert.type === 'fire' || state.activeAlert.type === 'crowd')) {
-    banner.classList.remove('hidden');
-    banner.textContent = `🚨 EMERGENCY: ${state.activeAlert.type.toUpperCase()} at ${state.activeAlert.location}.`;
+  const b = DOM['emergency-banner'];
+  if (!b) return;
+  if (state.activeAlert && ['fire', 'crowd'].includes(state.activeAlert.type)) {
+    b.classList.remove('hidden');
+    b.textContent = `🚨 EMERGENCY: ${state.activeAlert.type.toUpperCase()} at ${state.activeAlert.location}.`;
   } else {
-    banner.classList.add('hidden');
+    b.classList.add('hidden');
   }
 }
 
-// --- EXPOSE APP --- //
-window.app = {
-  approveReport: () => {
-    executeAction(state.pendingReport);
-    state.pendingReport = null;
-    document.getElementById('incoming-reports').classList.add('hidden');
-  },
-  dismissReport: () => {
-    state.pendingReport = null;
-    document.getElementById('incoming-reports').classList.add('hidden');
-  },
-  teamAction: (newStatus) => {
-    if (state.activeAlert) {
-      state.activeAlert.status = newStatus;
-      if (newStatus === 'Resolved') {
-        alert("Well done unit. Incident resolved.");
-        state.activeAlert = null;
-      }
-      renderTeamAlerts();
-    }
-  },
-  clearAlert: () => {
-    state.activeAlert = null;
-    document.getElementById('active-alert-widget').classList.add('hidden');
-    updateAttendeeBanner();
-  }
-};
+// ========== UTILITY HELPERS ========== //
 
-function triggerRandomSimulation() {
-  const options = ['fire in section 1', 'medical at gate B'];
-  document.getElementById('ai-command-input').value = options[Math.floor(Math.random() * options.length)];
-  handleAICommand('admin');
-}
+function showError(el, msg) { if (el) { el.textContent = msg; el.style.display = 'block'; } }
+function hideError(el) { if (el) el.style.display = 'none'; }
+function setFeedback(el, msg, show) { if (el) { el.textContent = msg; el.style.display = show ? 'block' : 'none'; } }
 
 function resetState() {
   state.user = null;
   state.role = null;
   state.activeAlert = null;
-  if(window.simInterval) clearInterval(window.simInterval);
+  state.pendingReport = null;
+  if (window._simInterval) clearInterval(window._simInterval);
 }
+
+function triggerRandomSimulation() {
+  const msgs = ['fire in section 1', 'medical emergency at gate B', 'heavy crowd near gate A'];
+  if (DOM['ai-command-input']) DOM['ai-command-input'].value = msgs[Math.floor(Math.random() * msgs.length)];
+  handleAICommand('admin');
+}
+
+// ========== PUBLIC API (for inline onclick handlers) ========== //
+
+window.app = {
+  approveReport: () => {
+    if (state.pendingReport) { executeAction(state.pendingReport); }
+    state.pendingReport = null;
+    DOM['incoming-reports']?.classList.add('hidden');
+  },
+  dismissReport: () => {
+    state.pendingReport = null;
+    DOM['incoming-reports']?.classList.add('hidden');
+  },
+  teamAction: async (newStatus) => {
+    if (!state.activeAlert) return;
+    state.activeAlert.status = newStatus;
+    // Update Firestore if ID exists
+    if (state.activeAlert.firestoreId) {
+      await updateAlertStatus(state.activeAlert.firestoreId, newStatus.toLowerCase(), state.activeAlert.teams);
+    }
+    if (newStatus === 'Resolved') {
+      state.activeAlert = null;
+    }
+    renderTeamAlerts();
+  },
+  clearAlert: () => {
+    state.activeAlert = null;
+    DOM['active-alert-widget']?.classList.add('hidden');
+    updateAttendeeBanner();
+  }
+};

@@ -1,38 +1,57 @@
-// firebase.js - Modular Firebase Auth
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+/**
+ * firebase.js — Firebase Configuration, Auth & Firestore
+ * 
+ * Purpose: Initializes Firebase app, Authentication, and Firestore.
+ *          All credentials loaded securely from environment variables.
+ * 
+ * Security: No API keys are hardcoded. Uses VITE_* env vars via Vite.
+ */
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import {
+  getFirestore, collection, addDoc, getDocs,
+  query, orderBy, serverTimestamp,
+  onSnapshot, doc, updateDoc
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
 import { ROLE_MAP } from './data.js';
 
+// --- CONFIGURATION (from environment) --- //
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-const app = initializeApp(firebaseConfig);
+// --- INITIALIZATION --- //
+const app  = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db   = getFirestore(app);
 
 /**
- * Maps an authenticated email to a system role.
+ * Determines system role from a user's email address.
+ * @param {string} email - The authenticated user's email
+ * @returns {string} - One of: admin, fire, medical, police, attendee
  */
-export const identifyUserRole = (email) => {
+export function identifyUserRole(email) {
   if (!email) return 'attendee';
   const prefix = email.split('@')[0].toLowerCase();
-  // Match prefix or default to attendee
   for (const [key, role] of Object.entries(ROLE_MAP)) {
     if (prefix.startsWith(key)) return role;
   }
   return 'attendee';
-};
+}
 
-export { 
-  auth, db, 
-  signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword,
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp
+// --- EXPORTS --- //
+export {
+  auth, db,
+  signInWithEmailAndPassword, onAuthStateChanged, signOut,
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp,
+  onSnapshot, doc, updateDoc
 };
