@@ -60,7 +60,8 @@ if (process.env.NODE_ENV === 'production') {
       fallthrough: true // Let it go to the SPA fallback if not found
     }));
 
-    app.get('*', (req: express.Request, res: express.Response) => {
+    // SPA fallback — serve index.html for all non-API, non-file routes
+    app.get('*', (req, res) => {
       // Don't serve index.html for missing asset files (prevents MIME mismatch)
       if (req.path.includes('.') && !req.path.endsWith('.html')) {
         return res.status(404).send('Asset not found');
