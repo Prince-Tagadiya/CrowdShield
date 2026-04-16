@@ -1,29 +1,32 @@
-# ── Stage 1: Build client ──────────────────────────────────────────────
-FROM node:20-alpine AS client-build
-WORKDIR /app/client
-COPY client/package.json client/package-lock.json* ./
-RUN npm ci --ignore-scripts
-COPY client/ ./
-RUN npm run build
-
-# ── Stage 2: Production ───────────────────────────────────────────────
-FROM node:20-alpine AS production
+FROM node:20-alpine
 WORKDIR /app
 
-# Install production dependencies and ts-node
-COPY server/package.json server/package-lock.json* ./server/
-RUN cd server && npm install -g ts-node typescript && npm ci --omit=dev --ignore-scripts
+# Install system dependencies
+RUN apk add --no-cache python3 make g++
 
-# Copy server source (Skip pre-compilation to avoid build-blockers)
-COPY server/ ./server/
+# Copy manifests
+COPY package*.json ./
+COPY client/package*.json ./client/
+COPY server/package*.json ./server/
 
-# Copy built client from stage 1
-COPY --from=client-build /app/client/dist ./client/dist
+# Install ALL dependencies (Dev + Prod) for the build phase
+RUN npm install && \
+    cd client && npm install && \
+    cd ../server && npm install -g ts-node typescript && npm install
 
-# Non-root user for security
+# Copy source
+COPY . .
+
+# Build Client
+RUN cd client && npm run build
+
+# Copy build result to server-visible path
+RUN mkdir -p client/dist && cp -r client/dist/* ./client/dist/
+
+# Security - Non-root
 RUN addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -u 1001 -G appgroup
-RUN chown -R appuser:appgroup /app
+    adduser -S appuser -u 1001 -G appgroup && \
+    chown -R appuser:appgroup /app
 USER appuser
 
 ENV NODE_ENV=production
@@ -31,5 +34,5 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-# Run directly from source using ts-node to guarantee startup success
+# Direct execution to skip tsc build blockers
 CMD ["ts-node", "--transpile-only", "server/src/index.ts"]
