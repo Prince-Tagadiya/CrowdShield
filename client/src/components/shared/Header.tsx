@@ -17,10 +17,10 @@ export default function Header() {
       <div className="header-inner">
         <Link to="/" className="header-logo" aria-label="CrowdShield home">
           <span className="logo-icon" aria-hidden="true">🏟️</span>
-          <span className="logo-text">CrowdShield [TAC]</span>
+          <span className="logo-text">CrowdShield</span>
           <span className="logo-live" aria-label="Live updates active">
             <span className="pulse-dot" aria-hidden="true"></span>
-            LIVE HUD
+            LIVE
           </span>
         </Link>
 
