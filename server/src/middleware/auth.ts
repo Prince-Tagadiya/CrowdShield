@@ -29,9 +29,11 @@ export async function requireAuth(
   try {
     const decoded = await auth.verifyIdToken(idToken);
 
-    // Check for staff role in custom claims
+    // Check for staff or legacy tactical roles
     const role = (decoded.role as string) ?? 'attendee';
-    if (role !== 'staff' && role !== 'admin') {
+    const allowedRoles = ['admin', 'staff', 'fire', 'medical', 'police'];
+    
+    if (!allowedRoles.includes(role)) {
       res.status(403).json({ error: 'Insufficient permissions. Staff access required.' });
       return;
     }
