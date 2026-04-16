@@ -34,11 +34,25 @@ app.use('/api/simulate', simulateRoutes);
 
 // ─── Serve static frontend in production ───
 if (process.env.NODE_ENV === 'production') {
-  const clientDistPath = path.join(__dirname, '..', '..', 'client', 'dist');
-  app.use(express.static(clientDistPath));
+  // Use project root relative to the compiled file location
+  const projectRoot = path.join(__dirname, '..', '..');
+  const clientDistPath = path.join(projectRoot, 'client', 'dist');
+  
+  logInfo('Production mode: serving static files', { clientDistPath });
 
-  // SPA fallback — serve index.html for all non-API routes
-  app.get(/.*/, (_req, res) => {
+  // Serve static files with caching
+  app.use(express.static(clientDistPath, {
+    maxAge: '1d',
+    index: false
+  }));
+
+  // SPA fallback — serve index.html for all non-API, non-file routes
+  app.get('*', (req: express.Request, res: express.Response) => {
+    // If it looks like a file request but wasn't caught by express.static, return a 404
+    if (req.path.includes('.')) {
+      res.status(404).end();
+      return;
+    }
     res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 }
