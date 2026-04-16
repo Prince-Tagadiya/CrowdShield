@@ -46,7 +46,7 @@ export interface Alert {
   createdAt: number;
   resolvedAt: number | null;
   resolvedBy: string | null;
-  triageAdvice?: string;
+  triageAdvice?: any;
 }
 
 /** Navigation result from Dijkstra algorithm */
@@ -67,6 +67,6 @@ export interface AIChatResponse {
 
 /** AI recommendations response */
 export interface AIRecommendationsResponse {
-  recommendations: string[];
+  recommendations: any[];
   generatedAt: string;
 }

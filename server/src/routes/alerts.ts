@@ -89,7 +89,7 @@ router.post(
       await alertRef.set(alert);
 
       // Debounced AI triage: only trigger if zone is crowded or critical
-      let triageResponse: string | null = null;
+      let triageResponse: any = null;
       const zoneStatus = zoneData.status as string;
 
       if (zoneStatus === 'crowded' || zoneStatus === 'critical') {

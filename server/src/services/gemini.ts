@@ -13,9 +13,9 @@ import type { Zone, Alert } from '../types';
  * @see https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal
  */
 
-const GCP_PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? process.env.GCLOUD_PROJECT ?? 'venueflow-80ead';
+const GCP_PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? process.env.GCLOUD_PROJECT ?? 'crowdshield-3912c';
 const GCP_LOCATION = 'asia-south1';
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-1.5-flash'; // Optimized for high-speed control center tasks
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const isProduction = process.env.NODE_ENV === 'production';
 

@@ -47,6 +47,7 @@ export interface Alert {
   createdAt: number;
   resolvedAt: number | null;
   resolvedBy: string | null;
+  triageAdvice?: any;
 }
 
 /** Request body for zone occupancy update */

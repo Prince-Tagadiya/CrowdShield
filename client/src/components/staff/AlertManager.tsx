@@ -261,7 +261,15 @@ function AlertCard({
       {alert.triageAdvice && (
         <div className="alert-card__triage" aria-label="AI triage assessment">
           <span className="alert-card__triage-label">🤖 AI Assessment:</span>
-          <p>{alert.triageAdvice}</p>
+          {typeof alert.triageAdvice === 'string' ? (
+            <p>{alert.triageAdvice}</p>
+          ) : (
+            <div className="alert-card__triage-details">
+              {alert.triageAdvice.action && <p><strong>🛡️ Action:</strong> {alert.triageAdvice.action}</p>}
+              {alert.triageAdvice.prediction && <p><strong>🔮 Prediction:</strong> {alert.triageAdvice.prediction}</p>}
+              {alert.triageAdvice.reasoning && <p><strong>🧠 Reasoning:</strong> {alert.triageAdvice.reasoning}</p>}
+            </div>
+          )}
         </div>
       )}
 
