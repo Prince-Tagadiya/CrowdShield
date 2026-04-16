@@ -2,14 +2,22 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
-dotenv.config({ path: path.join(process.cwd(), '../.env') });
+import { logInfo, logError } from './services/logger';
+
+// Only load .env if it exists (local dev); production uses environment variables
+const envPath = path.resolve(process.cwd(), '.env');
+const parentEnvPath = path.resolve(process.cwd(), '../.env');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+} else if (fs.existsSync(parentEnvPath)) {
+  dotenv.config({ path: parentEnvPath });
+}
 import { applySecurityMiddleware, generalLimiter } from './middleware/security';
 import zoneRoutes from './routes/zones';
 import alertRoutes from './routes/alerts';
 import aiRoutes from './routes/ai';
 import healthRoutes from './routes/health';
 import simulateRoutes from './routes/simulate';
-import { logInfo, logError } from './services/logger';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '8080', 10);
