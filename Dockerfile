@@ -1,22 +1,52 @@
-FROM node:20-slim AS build
+# ── Stage 1: Build client ──────────────────────────────────────────────
+FROM node:22-alpine AS client-build
 
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
+WORKDIR /app/client
+
+COPY client/package.json client/package-lock.json* ./
+RUN npm ci --ignore-scripts
+
+COPY client/ ./
+
+# Vite automatically reads .env.production during `npm run build`
 RUN npm run build
 
-FROM node:20-slim AS runtime
+# ── Stage 2: Build server ──────────────────────────────────────────────
+FROM node:22-alpine AS server-build
 
-ENV NODE_ENV=production
+WORKDIR /app/server
+
+COPY server/package.json server/package-lock.json* ./
+RUN npm ci --ignore-scripts
+
+COPY server/ ./
+RUN npm run build
+
+# ── Stage 3: Production ───────────────────────────────────────────────
+FROM node:22-alpine AS production
+
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Install only production server dependencies
+COPY server/package.json server/package-lock.json* ./server/
+RUN cd server && npm ci --omit=dev --ignore-scripts
 
-COPY --from=build /app/dist ./dist
-COPY server.js ./
+# Copy compiled server
+COPY --from=server-build /app/server/dist ./server/dist
+
+# Copy built client
+COPY --from=client-build /app/client/dist ./client/dist
+
+# Non-root user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -u 1001 -G appgroup
+
+USER appuser
+
+ENV NODE_ENV=production
+ENV PORT=8080
 
 EXPOSE 8080
 
-CMD ["npm", "start"]
+# Cloud Run requires the process to listen on PORT
+CMD ["node", "server/dist/index.js"]

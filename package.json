@@ -1,33 +1,24 @@
 {
-  "name": "crowdshield",
+  "name": "venueflow",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "Real-time crowd management platform for large sporting venues",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "node server.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "claims:sync": "node scripts/sync-custom-claims.mjs",
-    "rules:deploy": "node scripts/deploy-firestore-rules.mjs",
-    "passwords:set": "node scripts/set-test-passwords.mjs"
-  },
-  "dependencies": {
-    "compression": "^1.8.1",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^4.21.2",
-    "express-rate-limit": "^8.1.0",
-    "firebase-admin": "^13.4.0",
-    "helmet": "^8.1.0",
-    "zod": "^4.1.12"
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "build": "npm run build:client && npm run build:server",
+    "start": "cd server && npm start",
+    "seed": "cd scripts && npx ts-node seed.ts",
+    "test": "cd server && npm test",
+    "test:client": "cd client && npm test",
+    "lint": "cd server && npm run lint && cd ../client && npm run lint"
   },
   "devDependencies": {
-    "jsdom": "^26.1.0",
-    "supertest": "^7.1.1",
-    "vite": "^5.4.19",
-    "vitest": "^3.2.4"
+    "concurrently": "9.1.2",
+    "ts-node": "10.9.2",
+    "typescript": "5.7.3"
   }
 }

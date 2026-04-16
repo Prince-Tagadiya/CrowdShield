@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "zones": {
+      ".read": true,
+      ".write": "auth != null && auth.token.role === 'staff'"
+    },
+    "alerts": {
+      ".read": "auth != null && auth.token.role === 'staff'",
+      ".write": "auth != null && auth.token.role === 'staff'"
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

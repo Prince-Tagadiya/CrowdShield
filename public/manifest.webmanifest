@@ -1,9 +1,0 @@
-{
-  "name": "CrowdShield",
-  "short_name": "CrowdShield",
-  "description": "AI-powered crowd safety coordination for stadium operations and attendees.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#08131f",
-  "theme_color": "#08131f"
-}
