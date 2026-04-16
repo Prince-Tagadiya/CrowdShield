@@ -62,10 +62,8 @@ function createDirectProvider(): GeminiProvider | null {
   };
 }
 
-// Initialize: prefer Vertex AI in production, fall back to direct SDK
-const provider: GeminiProvider | null = isProduction
-  ? (createVertexProvider() ?? createDirectProvider())
-  : (createDirectProvider() ?? createVertexProvider());
+// Initialize: prefer Direct SDK for rapid demo response stability
+const provider: GeminiProvider | null = createDirectProvider() ?? createVertexProvider();
 
 /**
  * Retry wrapper with exponential backoff for Gemini API calls.
