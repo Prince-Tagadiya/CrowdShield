@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 dotenv.config({ path: path.join(process.cwd(), '../.env') });
 import { applySecurityMiddleware, generalLimiter } from './middleware/security';
@@ -35,17 +36,28 @@ app.use('/api/simulate', simulateRoutes);
 // ─── Serve static frontend in production ───
 if (process.env.NODE_ENV === 'production') {
   try {
-    const clientDistPath = path.resolve(__dirname, '../../client/dist');
-    logInfo('Production mode: serving static files', { path: clientDistPath });
+    // Hard-coded absolute path for Docker container stability
+    const clientDistPath = '/app/client/dist';
+    const indexHtml = path.join(clientDistPath, 'index.html');
+    
+    // Safety check: ensure we don't start a broken server
+    if (!fs.existsSync(indexHtml)) {
+      logError('CRITICAL: Frontend index.html not found', { path: indexHtml });
+    }
 
-    app.use(express.static(clientDistPath, { maxAge: '1d' }));
+    logInfo('Production mode: serving static files', { clientDistPath });
+
+    app.use(express.static(clientDistPath, { 
+      maxAge: '1d',
+      fallthrough: true // Let it go to the SPA fallback if not found
+    }));
 
     app.get('*', (req: express.Request, res: express.Response) => {
-      // Prevent recursion if assets are missing
-      if (req.path.startsWith('/assets/')) {
+      // Don't serve index.html for missing asset files (prevents MIME mismatch)
+      if (req.path.includes('.') && !req.path.endsWith('.html')) {
         return res.status(404).send('Asset not found');
       }
-      res.sendFile(path.join(clientDistPath, 'index.html'));
+      res.sendFile(indexHtml);
     });
   } catch (err) {
     logError('Failed to initialize static routes', err);
