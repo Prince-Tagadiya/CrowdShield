@@ -16,54 +16,34 @@ import type { Zone, Alert } from '../types';
 const GCP_PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? process.env.GCLOUD_PROJECT ?? 'crowdshield-3912c';
 const GCP_LOCATION = 'asia-south1';
 const GEMINI_MODEL = 'gemini-1.5-flash'; // Optimized for high-speed control center tasks
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const isProduction = process.env.NODE_ENV === 'production';
-
-/**
- * Abstraction over the Gemini model — works with both Vertex AI and direct SDK.
- */
 interface GeminiProvider {
   generateContent(prompt: string): Promise<string>;
 }
 
-/** Vertex AI provider — used in production (Cloud Run has implicit service account auth). */
-function createVertexProvider(): GeminiProvider | null {
+// Initialize: robust key detection across different platform envs
+const FINAL_KEY = process.env.GEMINI_API_KEY ?? process.env.VITE_GEMINI_API_KEY;
+
+function createRobustProvider(): GeminiProvider | null {
+  if (!FINAL_KEY) {
+    logWarning('AI SIGNAL LOST: No Gemini key detected in any environment variable.');
+    return null;
+  }
   try {
-    const vertexAI = new VertexAI({ project: GCP_PROJECT, location: GCP_LOCATION });
-    const model = vertexAI.getGenerativeModel({ model: GEMINI_MODEL });
-    logInfo('Gemini initialized via Vertex AI', { project: GCP_PROJECT, location: GCP_LOCATION, model: GEMINI_MODEL });
+    const genAI = new GoogleGenerativeAI(FINAL_KEY);
     return {
       async generateContent(prompt: string): Promise<string> {
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
         const result = await model.generateContent(prompt);
-        const text = result.response?.candidates?.[0]?.content?.parts?.[0]?.text;
-        return text ?? '';
+        return result.response.text() ?? '';
       },
     };
   } catch (err) {
-    logWarning('Vertex AI initialization failed, will use direct SDK', { error: String(err) });
+    logError('Failed to initialize Gemini SDK', err);
     return null;
   }
 }
 
-/** Direct Gemini SDK provider — used in local development. */
-function createDirectProvider(): GeminiProvider | null {
-  if (!GEMINI_API_KEY) {
-    logWarning('GEMINI_API_KEY not set — AI features will be unavailable');
-    return null;
-  }
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  logInfo('Gemini initialized via direct API key');
-  return {
-    async generateContent(prompt: string): Promise<string> {
-      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-      const result = await model.generateContent(prompt);
-      return result.response.text() ?? '';
-    },
-  };
-}
-
-// Initialize: prefer Direct SDK for rapid demo response stability
-const provider: GeminiProvider | null = createDirectProvider() ?? createVertexProvider();
+const provider: GeminiProvider | null = createRobustProvider();
 
 /**
  * Retry wrapper with exponential backoff for Gemini API calls.

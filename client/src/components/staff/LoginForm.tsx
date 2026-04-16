@@ -26,9 +26,20 @@ export default function LoginForm() {
     setSubmitting(true);
     try {
       await signIn(email, password);
+      console.log('Login successful');
       navigate('/staff');
-    } catch (err) {
-      setFormError('Invalid email or password. Please try again.');
+    } catch (err: any) {
+      console.error('Firebase Auth Failure Diagnostics:', {
+        code: err.code,
+        message: err.message,
+        emailAttempt: email
+      });
+      
+      const errorMessage = err.code === 'auth/user-not-found' 
+        ? 'User not found in Firebase. Please create this account in the Google Cloud Console.'
+        : 'Invalid email or password. Please try again.';
+        
+      setFormError(errorMessage);
     } finally {
       setSubmitting(false);
     }
