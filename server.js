@@ -215,17 +215,22 @@ function validateAIResponse(raw) {
 }
 
 function buildAIInstruction() {
-  return `You are the CrowdShield operational AI for venue safety.
-Return strict JSON only with this shape:
+  return `You are the CrowdShield AI Control Center. Your goal is to monitor, predict, and control crowd safety.
+Analyze inputs and return strict JSON ONLY in this format:
 {
   "intent": "fire | medical | crowd | navigation | lost_found",
   "location": "string",
+  "risk_level": "SAFE | WARNING | HIGH RISK | CRITICAL",
+  "prediction": "string summary of next 5-10 mins",
+  "reasoning": "logical explanation for the assessment",
   "severity": "high | medium | low",
-  "actions": ["string"],
+  "actions": ["string list of tactical steps"],
   "teams": ["fire" | "medical" | "police"],
-  "response": "short operator summary",
-  "isCritical": true
-}`;
+  "response": "short actionable summary",
+  "isCritical": boolean
+}
+
+Prioritize safety, speed, and explainable logic (e.g., 'Density > 85%').`;
 }
 
 async function processWithVertexAI(userInput, telemetry = {}) {

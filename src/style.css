@@ -260,7 +260,65 @@ textarea#ai-command-input {
   padding: 0 24px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s;
 }
 .btn-ai-submit:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent-glow); }
-.ai-log { margin-top: 10px; font-family: monospace; font-size: 0.75rem; color: var(--accent); }
+.ai-log { margin-top: 10px; font-family: inherit; font-size: 0.85rem; color: var(--text); }
+
+.ai-result.proactive {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-bright);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-result-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.risk-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.risk-badge.critical { background: var(--fire); color: #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+.risk-badge.high-risk { background: #f97316; color: #fff; }
+.risk-badge.warning { background: var(--warning); color: #000; }
+.risk-badge.safe { background: var(--medical); color: #fff; }
+
+.ai-result-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.ai-field {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.ai-field strong {
+  color: var(--accent);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.ai-result-summary {
+  font-weight: 500;
+  color: var(--text-bright);
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
 
 /* Tactical Map HUD */
 .map-container {

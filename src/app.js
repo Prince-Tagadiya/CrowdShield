@@ -387,17 +387,21 @@ async function handleAICommand(source) {
  */
 function renderAIResponse(result) {
   if (!DOM['ai-response-log']) return;
-  const severity = result.severity === 'high' ? '🔴' : result.severity === 'medium' ? '🟡' : '🟢';
+  const riskClass = result.risk_level?.toLowerCase().replace(' ', '-') || 'safe';
+  
   DOM['ai-response-log'].innerHTML = `
-    <div class="ai-result">
+    <div class="ai-result proactive">
       <div class="ai-result-header">
-        <strong>[AI Analysis]</strong> ${severity} ${result.intent?.toUpperCase()}
+        <span class="risk-badge ${riskClass}">${result.risk_level || 'SAFE'}</span>
+        <strong>${result.intent?.toUpperCase()} DETECTED</strong>
       </div>
-      <div class="ai-result-body">
-        <span>📍 ${result.location}</span>
-        <span>👥 Teams: ${result.teams?.join(', ')}</span>
+      <div class="ai-result-grid">
+        <div class="ai-field"><strong>📍 Location:</strong> ${result.location}</div>
+        <div class="ai-field"><strong>🧠 Reasoning:</strong> ${result.reasoning || 'Pattern matches baseline.'}</div>
+        <div class="ai-field"><strong>🔮 Prediction:</strong> ${result.prediction || 'Stability expected.'}</div>
+        <div class="ai-field"><strong>🛡️ Actions:</strong> ${result.actions?.join(', ') || 'Monitor'}</div>
       </div>
-      <div class="ai-result-msg">${result.response}</div>
+      <div class="ai-result-summary">${result.response}</div>
     </div>`;
 }
 
