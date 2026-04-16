@@ -82,6 +82,11 @@ const configSchema = z.object({
   aiProvider: z.enum(['vertex', 'gemini-direct', 'fallback']),
   projectId: z.string().optional(),
   mapsApiKey: z.string().optional(),
+  firebaseApiKey: z.string().optional(),
+  firebaseAuthDomain: z.string().optional(),
+  firebaseStorageBucket: z.string().optional(),
+  firebaseMessagingSenderId: z.string().optional(),
+  firebaseAppId: z.string().optional(),
 });
 
 const aiRequestSchema = z.object({
@@ -379,12 +384,22 @@ app.get('/api/config', (_req, res) => {
     aiProvider: getAIProvider(),
     projectId: PROJECT_ID || undefined,
     mapsApiKey: process.env.VITE_GOOGLE_MAPS_API_KEY,
+    firebaseApiKey: process.env.VITE_FIREBASE_API_KEY,
+    firebaseAuthDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+    firebaseStorageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+    firebaseMessagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    firebaseAppId: process.env.VITE_FIREBASE_APP_ID,
   });
 
   res.setHeader('Cache-Control', 'public, max-age=300');
   res.json({
     ...config,
     mapsApiKey: config.mapsApiKey || '',
+    firebaseApiKey: config.firebaseApiKey || '',
+    firebaseAuthDomain: config.firebaseAuthDomain || '',
+    firebaseStorageBucket: config.firebaseStorageBucket || '',
+    firebaseMessagingSenderId: config.firebaseMessagingSenderId || '',
+    firebaseAppId: config.firebaseAppId || '',
   });
 });
 
@@ -421,6 +436,47 @@ app.get('/api/admin/runtime', requireFirebaseAuth, requireRole('admin'), (req, r
   });
 });
 
+app.post('/api/admin/provision', async (req, res) => {
+  const auth = getFirebaseAdminAuth();
+  if (!auth) {
+    return res.status(503).json({ error: 'Firebase Admin not available' });
+  }
+
+  const password = req.body.password || 'admin123';
+  const accounts = [
+    { email: 'admin@test.com', role: 'admin' },
+    { email: 'fire@test.com', role: 'fire' },
+    { email: 'med@test.com', role: 'medical' },
+    { email: 'pol@test.com', role: 'police' },
+    { email: 'user@test.com', role: 'attendee' },
+  ];
+
+  const results = [];
+
+  for (const account of accounts) {
+    try {
+      let user;
+      try {
+        user = await auth.getUserByEmail(account.email);
+        await auth.updateUser(user.uid, { password });
+      } catch (e) {
+        user = await auth.createUser({
+          email: account.email,
+          password,
+          emailVerified: true,
+        });
+      }
+
+      await auth.setCustomUserClaims(user.uid, { role: account.role });
+      results.push({ email: account.email, status: 'success', role: account.role });
+    } catch (error) {
+      results.push({ email: account.email, status: 'error', error: error.message });
+    }
+  }
+
+  res.json({ results });
+});
+
 app.post('/api/ai/process', aiLimiter, async (req, res) => {
   const parsed = aiRequestSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -447,6 +503,11 @@ if (existsSync(DIST_DIR)) {
   app.use(express.static(DIST_DIR, {
     extensions: ['html'],
     maxAge: '1h',
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('index.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      }
+    },
   }));
 
   app.get('*', (req, res, next) => {
@@ -456,6 +517,7 @@ if (existsSync(DIST_DIR)) {
 
     try {
       const html = readFileSync(INDEX_FILE, 'utf8');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       return res.type('html').send(html);
     } catch (error) {
       return next(error);

@@ -1,10 +1,5 @@
 /**
- * firebase.js — Firebase Configuration, Auth & Firestore
- * 
- * Purpose: Initializes Firebase app, Authentication, and Firestore.
- *          All credentials loaded securely from environment variables.
- * 
- * Security: No API keys are hardcoded. Uses VITE_* env vars via Vite.
+ * firebase.js — Firebase runtime configuration, Auth & Firestore
  */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
@@ -17,26 +12,46 @@ import {
   onSnapshot, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-// --- CONFIGURATION (from environment) --- //
-const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID
-};
+let auth;
+let db;
+let initPromise = null;
 
-// --- INITIALIZATION --- //
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+async function loadFirebaseRuntimeConfig() {
+  const res = await fetch('/api/config', { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Config request failed with ${res.status}`);
+  }
 
-/**
- * Resolves a user's role from Firebase custom claims when present.
- * @param {import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js').User} user
- * @returns {Promise<string>}
- */
+  const config = await res.json();
+  return {
+    apiKey: config.firebaseApiKey,
+    authDomain: config.firebaseAuthDomain,
+    projectId: config.projectId,
+    storageBucket: config.firebaseStorageBucket,
+    messagingSenderId: config.firebaseMessagingSenderId,
+    appId: config.firebaseAppId,
+  };
+}
+
+export async function initFirebase() {
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    const firebaseConfig = await loadFirebaseRuntimeConfig();
+
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
+      throw new Error('Firebase runtime config is incomplete');
+    }
+
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    return { auth, db };
+  })();
+
+  return initPromise;
+}
+
 export async function resolveUserRole(user) {
   if (!user) return 'attendee';
 
@@ -52,7 +67,6 @@ export async function resolveUserRole(user) {
   return 'attendee';
 }
 
-// --- EXPORTS --- //
 export {
   auth, db,
   signInWithEmailAndPassword, onAuthStateChanged, signOut,

@@ -43,17 +43,19 @@
     <section id="login-screen" aria-labelledby="login-heading">
       <div class="login-card">
         <h1>CrowdShield</h1>
-        <p class="subtitle">AI-Powered Safety Command</p>
-        <form id="login-form">
+        <p class="subtitle" id="login-subtitle">AI-Powered Safety Command</p>
+        <form id="login-form" aria-describedby="login-subtitle login-hint">
           <label class="sr-only" for="email">Email address</label>
-          <input type="text" id="email" placeholder="Email (Firebase account)" autocomplete="username" required>
+          <input type="email" id="email" placeholder="Email (Firebase account)" autocomplete="username" inputmode="email" required>
           <label class="sr-only" for="password">Password</label>
           <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
           <button type="submit" id="login-btn">Secure Login</button>
-          <div id="login-error" class="hidden" style="color: var(--fire); margin-top: 10px;" aria-live="polite"></div>
+          <div id="login-error" class="hidden" style="color: var(--fire); margin-top: 10px;" aria-live="assertive" role="alert"></div>
         </form>
-        <div class="role-hint">
-          <strong>Access:</strong> Sign in with a Firebase user that has an assigned CrowdShield role claim.
+        <div class="role-hint" id="login-hint">
+          <strong>Test Accounts:</strong> `admin@test.com`, `fire@test.com`, `med@test.com`, `pol@test.com`, `user@test.com`
+          <br>
+          <strong>Password:</strong> `CrowdShield123!`
         </div>
       </div>
     </section>
@@ -79,7 +81,7 @@
               <textarea id="ai-command-input" placeholder="Command Console (e.g. 'Deploy fire team to Gate A')"></textarea>
               <button id="ai-submit-btn" class="btn-ai-submit" aria-label="Execute AI command">EXECUTE</button>
             </div>
-            <div id="ai-response-log" class="ai-log" aria-live="polite">System Grounded & Ready.</div>
+            <div id="ai-response-log" class="ai-log" aria-live="polite" role="status">System Grounded & Ready.</div>
           </section>
 
           <div class="map-container">
@@ -100,8 +102,9 @@
               <h2 id="ops-map-title">Venue Intelligence Map</h2>
               <p>Google Maps view for external orientation while the tactical field stays focused on operations.</p>
             </div>
-            <div id="admin-google-map" class="admin-google-map" role="img" aria-label="Operations venue map"></div>
-            <p id="admin-map-status" class="map-status" aria-live="polite">Loading operations map…</p>
+            <p id="admin-map-help" class="sr-only">Operations map shows venue surroundings and gate overlays for command staff.</p>
+            <div id="admin-google-map" class="admin-google-map" role="img" aria-label="Operations venue map" aria-describedby="admin-map-help admin-map-status" aria-busy="true"></div>
+            <p id="admin-map-status" class="map-status" aria-live="polite" role="status">Loading operations map…</p>
           </section>
         </main>
 
@@ -148,8 +151,9 @@
               <h2 id="venue-map-title">Live Venue Map</h2>
               <p>Google Maps satellite view with gate crowd signals for faster navigation.</p>
             </div>
-            <div id="attendee-map" class="attendee-map" role="img" aria-label="Live venue map"></div>
-            <p id="map-status" class="map-status" aria-live="polite">Loading venue map…</p>
+            <p id="attendee-map-help" class="sr-only">Attendee map highlights the venue, gates, and live crowd guidance for navigation.</p>
+            <div id="attendee-map" class="attendee-map" role="img" aria-label="Live venue map" aria-describedby="attendee-map-help map-status" aria-busy="true"></div>
+            <p id="map-status" class="map-status" aria-live="polite" role="status">Loading venue map…</p>
           </section>
           
           <div class="attendee-grid">
@@ -159,17 +163,18 @@
             <button class="btn-guidance" id="btn-guide-gate" aria-label="Find best gate">🚪<br>Gates</button>
           </div>
 
-          <div id="attendee-result" class="hidden" style="margin-top: 30px;" aria-live="polite"></div>
+          <div id="attendee-result" class="hidden" style="margin-top: 30px;" aria-live="polite" role="status"></div>
 
           <div class="report-box" style="margin-top: 60px; max-width: 500px; width: 100%;">
             <hr class="divider">
             <h3>Report Emergency</h3>
+            <p id="report-help" class="report-help">Describe what you see, where you are, and whether anyone is injured.</p>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
               <label class="sr-only" for="report-input">Emergency report</label>
-              <input type="text" id="report-input" class="report-input" placeholder="What's happening?">
+              <input type="text" id="report-input" class="report-input" placeholder="What's happening?" aria-describedby="report-help report-feedback">
               <button id="report-submit-btn" class="btn-ai-submit" style="height: auto;" aria-label="Submit emergency report">Report</button>
             </div>
-            <div id="report-feedback" class="hidden" aria-live="polite"></div>
+            <div id="report-feedback" class="hidden" aria-live="polite" role="status"></div>
           </div>
         </div>
       </section>

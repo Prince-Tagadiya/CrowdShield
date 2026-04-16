@@ -159,6 +159,22 @@ npm run build
 PORT=59005 npm start
 ```
 
+## Test Accounts
+
+For evaluation and demo access, the Firebase users below are seeded with role claims:
+
+- `admin@test.com`
+- `fire@test.com`
+- `med@test.com`
+- `pol@test.com`
+- `user@test.com`
+
+Shared password for all seeded test users:
+
+```text
+CrowdShield123!
+```
+
 ## Useful Scripts
 
 ```bash
@@ -166,6 +182,7 @@ npm test
 npm run build
 npm run claims:sync
 npm run rules:deploy
+npm run passwords:set
 ```
 
 ### Claim Sync

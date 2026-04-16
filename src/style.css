@@ -71,6 +71,17 @@ body {
 }
 .skip-link:focus { top: 12px; }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+dialog:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid rgba(125, 211, 252, 0.95);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+}
+
 #main-content {
   flex: 1;
   display: flex;
@@ -179,6 +190,13 @@ nav {
   display: none !important;
 }
 
+.report-help {
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 /* --- ADMIN VIEW (3-COLUMN GRID) --- */
 #view-admin {
   display: grid;
@@ -211,6 +229,8 @@ nav {
   flex-direction: column;
   background: radial-gradient(circle at center, #111827 0%, #05070a 100%);
   position: relative;
+  overflow-y: auto;
+  padding-bottom: 60px;
 }
 
 .ai-console {

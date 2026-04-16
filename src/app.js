@@ -18,7 +18,7 @@
  *   5. Attendees see emergency banner for critical alerts
  */
 
-import { auth, signInWithEmailAndPassword, onAuthStateChanged, signOut, resolveUserRole } from './firebase.js';
+import { initFirebase, auth, signInWithEmailAndPassword, onAuthStateChanged, signOut, resolveUserRole } from './firebase.js';
 import { GATES, WORKERS, TEAM_ROLES, EVENT_TYPES } from './data.js';
 import { getBestGate, getBestExit, getBestFood, getBestWashroom } from './decision.js';
 import { processAIInput } from './ai.js';
@@ -34,11 +34,18 @@ let appConfig = { hasGoogleMaps: false, mapsApiKey: '' };
 // ========== INITIALIZATION ========== //
 
 document.addEventListener('DOMContentLoaded', async () => {
-  cacheDOMElements();
-  setupEventListeners();
-  setupStateSubscribers();
-  await loadRuntimeConfig();
-  runAllTests();
+  try {
+    await initFirebase();
+    cacheDOMElements();
+    setupEventListeners();
+    setupStateSubscribers();
+    setupAuthObserver();
+    await loadRuntimeConfig();
+    runAllTests();
+  } catch (error) {
+    console.error('[Bootstrap]', error);
+    document.body.innerHTML = '<main style="padding:24px;font-family:system-ui,sans-serif;color:#fff;background:#08131f;min-height:100vh"><h1>CrowdShield failed to start</h1><p>Firebase runtime configuration could not be loaded.</p></main>';
+  }
 });
 
 /**
@@ -120,20 +127,20 @@ function setupStateSubscribers() {
 
 // ========== AUTHENTICATION ========== //
 
-/** Firebase auth state observer */
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    setState('currentUser', { email: user.email, uid: user.uid });
-    setState('role', await resolveUserRole(user));
-    renderDashboard();
-  } else {
-    // Only reset if we had a user (avoid double-reset on init)
-    if (getState('currentUser')) {
-      resetState();
+function setupAuthObserver() {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      setState('currentUser', { email: user.email, uid: user.uid });
+      setState('role', await resolveUserRole(user));
+      renderDashboard();
+    } else {
+      if (getState('currentUser')) {
+        resetState();
+      }
+      showView('login');
     }
-    showView('login');
-  }
-});
+  });
+}
 
 /**
  * Binds all interactive event listeners. Called once.
@@ -316,6 +323,7 @@ async function handleAICommand(source) {
   // UI feedback — show processing state
   if (source === 'attendee') {
     setFeedback(DOM['report-feedback'], '⏳ Processing with CrowdShield AI...', true);
+    DOM['report-input']?.setAttribute('aria-busy', 'true');
     if (DOM['report-submit-btn']) DOM['report-submit-btn'].disabled = true;
   } else {
     if (DOM['ai-response-log']) DOM['ai-response-log'].innerHTML = '<span class="ai-processing">⏳ AI analyzing input...</span>';
@@ -359,6 +367,9 @@ async function handleAICommand(source) {
       if (DOM['ai-response-log']) DOM['ai-response-log'].innerHTML = '<span class="ai-error">⚠️ Something went wrong. Please try again.</span>';
     }
   } finally {
+    if (source === 'attendee') {
+      DOM['report-input']?.setAttribute('aria-busy', 'false');
+    }
     // Re-enable buttons
     if (DOM['report-submit-btn']) DOM['report-submit-btn'].disabled = false;
     if (DOM['ai-submit-btn']) DOM['ai-submit-btn'].disabled = false;
@@ -485,6 +496,7 @@ async function syncVenueMap(mode) {
   if (!appConfig?.hasGoogleMaps || !appConfig?.mapsApiKey) {
     if (mode === 'attendee' && DOM['map-status']) {
       DOM['map-status'].textContent = 'Live venue map unavailable. Add Google Maps API key to enable it.';
+      DOM['attendee-map']?.setAttribute('aria-busy', 'false');
     }
     return;
   }
@@ -508,6 +520,8 @@ async function syncVenueMap(mode) {
       ? 'Live satellite venue map loaded.'
       : 'Showing Google Maps fallback view. Restrict the API key for production before launch.';
   }
+
+  targetContainer.setAttribute('aria-busy', 'false');
 }
 
 /** Simulation loop: moves workers and fluctuates crowd levels (3s interval) */
@@ -787,7 +801,11 @@ function updateAttendeeInsights() {
 
 function showError(el, msg) { if (el) { el.textContent = msg; el.style.display = 'block'; } }
 function hideError(el) { if (el) el.style.display = 'none'; }
-function setFeedback(el, msg, show) { if (el) { el.textContent = msg; el.style.display = show ? 'block' : 'none'; } }
+function setFeedback(el, msg, show) {
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = show ? 'block' : 'none';
+}
 
 function triggerRandomSimulation() {
   const scenarios = [

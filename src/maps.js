@@ -58,29 +58,43 @@ export async function loadGoogleMaps(apiKey) {
   }
 }
 
+let mapsCache = new Map();
+
 export async function renderVenueMap({ container, apiKey, gates = [], mode = 'attendee' }) {
-  if (!container) {
-    return null;
-  }
+  if (!container) return null;
 
   const maps = await loadGoogleMaps(apiKey);
   if (!maps?.Map) {
     return renderIframeFallback(container);
   }
 
-  clearContainer(container);
+  // Reuse existing map if possible
+  let mapInstance = mapsCache.get(container);
+  
+  if (!mapInstance) {
+    clearContainer(container);
+    mapInstance = new maps.Map(container, {
+      center: VENUE_CENTER,
+      zoom: 17,
+      mapTypeId: 'satellite',
+      disableDefaultUI: mode === 'admin',
+      zoomControl: mode !== 'admin',
+      streetViewControl: false,
+      fullscreenControl: false,
+      clickableIcons: false,
+      gestureHandling: 'cooperative',
+    });
+    mapInstance.markers = [];
+    mapsCache.set(container, mapInstance);
+  }
 
-  const map = new maps.Map(container, {
-    center: VENUE_CENTER,
-    zoom: 17,
-    mapTypeId: 'satellite',
-    disableDefaultUI: mode === 'admin',
-    zoomControl: mode !== 'admin',
-    streetViewControl: false,
-    fullscreenControl: false,
-    clickableIcons: false,
-    gestureHandling: 'cooperative',
-  });
+  const map = mapInstance;
+
+  // Clear old markers from this instance
+  if (map.markers) {
+    map.markers.forEach(m => m.setMap(null));
+    map.markers = [];
+  }
 
   const offsets = [
     { lat: 0.0014, lng: -0.0015 },
@@ -115,6 +129,7 @@ export async function renderVenueMap({ container, apiKey, gates = [], mode = 'at
     });
 
     marker.addListener('click', () => infoWindow.open({ anchor: marker, map }));
+    map.markers.push(marker);
   });
 
   if (mode === 'attendee') {

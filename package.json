@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "claims:sync": "node scripts/sync-custom-claims.mjs",
-    "rules:deploy": "node scripts/deploy-firestore-rules.mjs"
+    "rules:deploy": "node scripts/deploy-firestore-rules.mjs",
+    "passwords:set": "node scripts/set-test-passwords.mjs"
   },
   "dependencies": {
     "compression": "^1.8.1",
