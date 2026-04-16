@@ -34,27 +34,22 @@ app.use('/api/simulate', simulateRoutes);
 
 // ─── Serve static frontend in production ───
 if (process.env.NODE_ENV === 'production') {
-  // Use project root relative to the compiled file location
-  const projectRoot = path.join(__dirname, '..', '..');
-  const clientDistPath = path.join(projectRoot, 'client', 'dist');
-  
-  logInfo('Production mode: serving static files', { clientDistPath });
+  try {
+    const clientDistPath = path.resolve(__dirname, '../../client/dist');
+    logInfo('Production mode: serving static files', { path: clientDistPath });
 
-  // Serve static files with caching
-  app.use(express.static(clientDistPath, {
-    maxAge: '1d',
-    index: false
-  }));
+    app.use(express.static(clientDistPath, { maxAge: '1d' }));
 
-  // SPA fallback — serve index.html for all non-API, non-file routes
-  app.get('*', (req: express.Request, res: express.Response) => {
-    // If it looks like a file request but wasn't caught by express.static, return a 404
-    if (req.path.includes('.')) {
-      res.status(404).end();
-      return;
-    }
-    res.sendFile(path.join(clientDistPath, 'index.html'));
-  });
+    app.get('*', (req: express.Request, res: express.Response) => {
+      // Prevent recursion if assets are missing
+      if (req.path.startsWith('/assets/')) {
+        return res.status(404).send('Asset not found');
+      }
+      res.sendFile(path.join(clientDistPath, 'index.html'));
+    });
+  } catch (err) {
+    logError('Failed to initialize static routes', err);
+  }
 }
 
 // ─── Global error handler ───
