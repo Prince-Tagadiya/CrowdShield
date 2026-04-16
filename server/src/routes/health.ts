@@ -9,7 +9,7 @@ const router = Router();
 router.get('/', (_req: Request, res: Response): void => {
   res.json({
     status: 'healthy',
-    service: 'venueflow-api',
+    service: 'crowdshield-api',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });

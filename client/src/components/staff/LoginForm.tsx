@@ -62,7 +62,7 @@ export default function LoginForm() {
               className="login-form__input"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="staff@venueflow.app"
+              placeholder="staff@crowdshield.app"
               required
               aria-required="true"
               autoComplete="email"

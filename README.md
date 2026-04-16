@@ -10,7 +10,7 @@ CrowdShield is a production-ready, AI-powered crowd management platform designed
 
 CrowdShield is designed for instant demo impact. Follow these steps to see the AI in action:
 
-1. **Access the Admin Command Center**: Log in as `admin@venueflow.com` (Pass: `admin123`).
+1. **Access the Admin Command Center**: Log in as `admin@crowdshield.com` (Pass: `admin123`).
 2. **Launch "Chaos Mode"**: Click the **🚨 START EMERGENCY** button.
 3. **The AI Reaction**: 
    * Watch as the **Emergency HUD** turns deep red with tactile glitch animations.
@@ -77,5 +77,5 @@ Zero-polling architecture. Every occupancy change, alert creation, and AI recomm
 
 ---
 
-**Developed for the VenueFlow Challenge.**
+**Developed for the CrowdShield Challenge.**
 **Live Version**: [https://crowdshield-864518919258.asia-south1.run.app](https://crowdshield-864518919258.asia-south1.run.app)

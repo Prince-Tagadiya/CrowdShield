@@ -55,7 +55,7 @@ export default function Home() {
           <span className="perf-badge">🚀 Unmatched Performance</span>
           <h2>Designed for the Modern Event</h2>
           <p>
-            Built with a lightweight, &lt;1MB architecture, VenueFlow works on any device—even in low-connectivity stadium environments.
+            Built with a lightweight, &lt;1MB architecture, CrowdShield works on any device—even in low-connectivity stadium environments.
           </p>
           <ul className="perf-checklist">
             <li>✅ Responsive on tablets, mobile, and desktop</li>
@@ -74,7 +74,7 @@ export default function Home() {
       {/* 🏟️ Global CTA */}
       <section className="final-cta">
         <h2>Ready to transform your venue?</h2>
-        <p>Join world-class stadiums using VenueFlow to manage millions of fans safely every year.</p>
+        <p>Join world-class stadiums using CrowdShield to manage millions of fans safely every year.</p>
         <div className="cta-buttons">
           <button className="btn-primary-lg">Inquire Now</button>
           <button className="btn-secondary-lg">Download Fact Sheet</button>

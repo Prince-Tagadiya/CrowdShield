@@ -55,7 +55,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 
 // ─── Start server ───
 app.listen(PORT, '0.0.0.0', () => {
-  logInfo('VenueFlow server started', {
+  logInfo('CrowdShield server started', {
     port: PORT,
     environment: process.env.NODE_ENV ?? 'development',
     healthCheck: `http://localhost:${PORT}/api/health`,

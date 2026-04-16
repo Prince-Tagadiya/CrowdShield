@@ -35,8 +35,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.svg'],
       manifest: {
-        name: 'VenueFlow — Live Crowd Intelligence',
-        short_name: 'VenueFlow',
+        name: 'CrowdShield — Live Crowd Intelligence',
+        short_name: 'CrowdShield',
         description: 'Real-time crowd management for Wankhede Stadium',
         theme_color: '#0f172a',
         background_color: '#0f172a',

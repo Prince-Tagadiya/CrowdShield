@@ -4,7 +4,7 @@ import { logInfo, logWarning, logError } from './logger';
 import type { Zone, Alert } from '../types';
 
 /**
- * Gemini AI service for VenueFlow.
+ * Gemini AI service for CrowdShield.
  *
  * Uses Google Cloud Vertex AI when running on Cloud Run (production),
  * falling back to the direct Gemini API SDK for local development.

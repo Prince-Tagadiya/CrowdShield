@@ -29,7 +29,7 @@ export default function HeroBanner() {
   }
 
   return (
-    <section className="hero-banner" aria-label="VenueFlow Introduction">
+    <section className="hero-banner" aria-label="CrowdShield Introduction">
       <div className="hero-content">
         <div className="hero-badge">
           <span className="pulse-dot"></span>

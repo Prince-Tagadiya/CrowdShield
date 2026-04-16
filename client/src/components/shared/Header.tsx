@@ -15,9 +15,9 @@ export default function Header() {
   return (
     <header className="app-header" role="banner">
       <div className="header-inner">
-        <Link to="/" className="header-logo" aria-label="VenueFlow home">
+        <Link to="/" className="header-logo" aria-label="CrowdShield home">
           <span className="logo-icon" aria-hidden="true">🏟️</span>
-          <span className="logo-text">VenueFlow</span>
+          <span className="logo-text">CrowdShield</span>
           <span className="logo-live" aria-label="Live updates active">
             <span className="pulse-dot" aria-hidden="true"></span>
             LIVE

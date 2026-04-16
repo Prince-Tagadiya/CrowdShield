@@ -1,5 +1,5 @@
 /**
- * VenueFlow Seed Script
+ * CrowdShield Seed Script
  * Populates Firebase Realtime Database with 6 realistic zones for
  * Wankhede Stadium, Mumbai. Run once after Firebase setup.
  *

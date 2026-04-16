@@ -29,7 +29,7 @@ admin.initializeApp({
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ✏️  CHANGE THIS to the email you created in Firebase Auth
-const STAFF_EMAIL = 'staff@venueflow.app';
+const STAFF_EMAIL = 'staff@crowdshield.app';
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 async function setClaims() {

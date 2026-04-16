@@ -1,4 +1,4 @@
-🏟️ Just shipped VenueFlow — a real-time crowd intelligence platform for Wankhede Stadium, Mumbai.
+🏟️ Just shipped CrowdShield — a real-time crowd intelligence platform for Wankhede Stadium, Mumbai.
 
 The problem: 33,000 people, zero visibility into congestion, fragmented staff coordination, and blind navigation inside the venue.
 

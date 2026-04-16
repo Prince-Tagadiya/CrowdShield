@@ -1,4 +1,4 @@
-# Building VenueFlow: Real-Time Crowd Intelligence with Google Cloud, Firebase, and Gemini AI
+# Building CrowdShield: Real-Time Crowd Intelligence with Google Cloud, Firebase, and Gemini AI
 
 **How I built a production crowd management platform for Wankhede Stadium that solves three converging failures at large sporting venues.**
 
@@ -10,7 +10,7 @@ If you've ever attended a cricket match at a venue like Mumbai's Wankhede Stadiu
 
 This isn't just an inconvenience problem. It's a safety problem. When 33,000 people have zero visibility into congestion, bottlenecks compound. Staff coordinate over radios with no shared state. And the venue has no system that connects real-time occupancy data to attendee-facing guidance.
 
-VenueFlow solves all three problems with a single real-time web application: **crowd visibility for attendees, unified state for staff, and congestion-aware navigation for everyone.**
+CrowdShield solves all three problems with a single real-time web application: **crowd visibility for attendees, unified state for staff, and congestion-aware navigation for everyone.**
 
 ## Architectural Decisions
 
@@ -103,7 +103,7 @@ Five distinct Google services with deep integration:
 
 ## The Result
 
-VenueFlow is a fully functional, production-deployed crowd management platform. Staff update occupancy → all connected attendees see it within 1-2 seconds → the AI chat gives answers grounded in that live data → the navigation algorithm routes around congestion. It's a closed loop, not a demo.
+CrowdShield is a fully functional, production-deployed crowd management platform. Staff update occupancy → all connected attendees see it within 1-2 seconds → the AI chat gives answers grounded in that live data → the navigation algorithm routes around congestion. It's a closed loop, not a demo.
 
 The entire application — server, client, tests, Docker, deployment — was built in a single session. No stubs, no mocks in production, no placeholder data. The seed script loads 6 realistic zones with varied congestion levels so the demo is immediately convincing.
 

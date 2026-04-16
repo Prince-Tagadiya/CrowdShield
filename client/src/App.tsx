@@ -53,17 +53,17 @@ export default function App() {
             <footer className="app-footer" role="contentinfo">
               <div className="footer-content">
                 <div className="footer-brand">
-                  <span className="footer-logo">🏟️ VenueFlow</span>
+                  <span className="footer-logo">🏟️ CrowdShield</span>
                   <p>Real-time Crowd Intelligence for scale.</p>
                 </div>
                 <div className="footer-links">
                   <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="footer-link">Google Cloud</a>
                   <a href="https://firebase.google.com" target="_blank" rel="noreferrer" className="footer-link">Firebase</a>
-                  <a href="https://github.com/pranavg21/venueflow" target="_blank" rel="noreferrer" className="footer-link">GitHub</a>
+                  <a href="https://github.com/pranavg21/crowdshield" target="_blank" rel="noreferrer" className="footer-link">GitHub</a>
                 </div>
               </div>
               <div className="footer-bottom">
-                <p>© 2026 VenueFlow — Built for Google PromptWars</p>
+                <p>© 2026 CrowdShield — Built for Google PromptWars</p>
               </div>
             </footer>
             {/* Floating simulation toggle for demo mode */}

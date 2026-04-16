@@ -18,7 +18,7 @@ export default function AIChatPanel() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "👋 Hi! I'm VenueFlow AI. Ask me anything about Wankhede Stadium — like \"Where's the shortest food queue?\" or \"Which gate has the least wait?\" I have access to live crowd data!",
+      content: "👋 Hi! I'm CrowdShield AI. Ask me anything about Wankhede Stadium — like \"Where's the shortest food queue?\" or \"Which gate has the least wait?\" I have access to live crowd data!",
       timestamp: Date.now(),
     },
   ]);
@@ -97,7 +97,7 @@ export default function AIChatPanel() {
 
   return (
     <section className="chat-panel" aria-label="AI venue assistant">
-      <h2 className="section-title">Ask VenueFlow AI</h2>
+      <h2 className="section-title">Ask CrowdShield AI</h2>
       <p className="section-subtitle">
         <span className="live-indicator" aria-hidden="true">●</span>
         {' '}Powered by live venue data • Multi-turn conversation
@@ -129,7 +129,7 @@ export default function AIChatPanel() {
           <div
             key={msg.id}
             className={`chat-message chat-message--${msg.role}`}
-            aria-label={`${msg.role === 'user' ? 'You' : 'VenueFlow AI'}: ${msg.content}`}
+            aria-label={`${msg.role === 'user' ? 'You' : 'CrowdShield AI'}: ${msg.content}`}
           >
             <span className="chat-message__avatar" aria-hidden="true">
               {msg.role === 'user' ? '👤' : '🤖'}

@@ -19,7 +19,7 @@ let cloudLog: ReturnType<Logging['log']> | null = null;
 if (isProduction) {
   try {
     const logging = new Logging();
-    cloudLog = logging.log('venueflow-server');
+    cloudLog = logging.log('crowdshield-server');
   } catch {
     // Cloud Logging may not be available outside GCP — fall back silently
   }
