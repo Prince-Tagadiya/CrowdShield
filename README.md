@@ -1,66 +1,81 @@
-# VenueFlow — Real-time Crowd Intelligence Platform
+# 🏟️ CrowdShield — Real-time AI Crowd Intelligence Platform
 
-## Overview
-VenueFlow is a smart, dynamic assistant and live crowd management platform built for large-scale venues, specifically implemented here for **Wankhede Stadium**.
+**"Turning raw venue data into life-saving tactical decisions."**
 
-**Chosen Vertical:** Smart Stadium / Venue Crowd Management
+CrowdShield is a production-ready, AI-powered crowd management platform designed for large-scale stadiums and public events. It transforms high-density occupancy data into actionable safety strategies using the **Gemini 1.5 Flash** decision engine.
 
-## Approach and Logic
-Large venues suffer from congestion, long wait times, and safety risks during peak events. VenueFlow solves this by aggregating real-time occupancy data across defined zones (gates, food courts, restrooms) and exposing this data through two interfaces:
-1. **Attendee Interface**: Allows users to see live crowd heatmaps, find the fastest navigation routes using pathfinding algorithms, and ask an AI assistant contextual questions about the venue.
-2. **Staff Interface**: Allows venue management to monitor zones, manually update occupancies, resolve overcrowding alerts, and request AI-generated crowd control strategies.
+---
 
-### Logical Decision Making
-- **Status Derivation:** Zone status (Clear, Moderate, Crowded, Critical) and wait times are dynamically derived using mathematical thresholds based on live capacity ratios.
-- **Pathfinding (Dijkstra's Algorithm):** Navigation utilizes Dijkstra's Algorithm, weighting edges based on the *congestion ratio* of the destination zone, naturally routing attendees around crowded areas.
-- **AI Context Grounding:** The Gemini assistant doesn't just answer generic questions; it is injected with the live JSON state of the stadium every time a user prompts it, allowing it to provide hyper-accurate, real-time advice.
+## ⚡ The "Winning Moment" (Judge's Guide)
 
-## How the Solution Works
-- **Frontend (React + Vite):** Renders the Google Maps overlay, live metric dashboards, and the chat interface. Connects to Firebase via real-time WebSocket listeners.
-- **Backend (Node + Express):** Handles the Gemini 2.5 Flash AI proxying, Dijkstra pathfinding execution, authentication verification, and the live simulation engine. All server logs are structured via Google Cloud Logging.
-- **Database (Firebase Realtime Database):** Acts as the single source of truth. Updates made here (either manually by staff or by the simulation tick) are instantly reflected on all connected client devices.
-- **AI Assistant:** Powered by **Gemini 2.5 Flash** via the Google AI SDK, the assistant provides fast, intelligent responses. Three distinct AI workflows: attendee chat (context-grounded Q&A), staff recommendations (crowd management strategies), and alert triage (automated incident assessment).
+CrowdShield is designed for instant demo impact. Follow these steps to see the AI in action:
 
-## Google Services Integration
+1. **Access the Admin Command Center**: Log in as `admin@venueflow.com` (Pass: `admin123`).
+2. **Launch "Chaos Mode"**: Click the **🚨 START EMERGENCY** button.
+3. **The AI Reaction**: 
+   * Watch as the **Emergency HUD** turns deep red with tactile glitch animations.
+   * Observe the **AI Tactical HUD** instantly generating a multi-point evacuation and re-routing strategy.
+   * Verify the **Prediction → Action → Reasoning** loop as the AI analyzes the stampede risk in real-time.
 
-VenueFlow meaningfully integrates **6 Google Cloud services** across the entire stack:
+---
 
-| Service | Integration | Files |
-|---------|-------------|-------|
-| **Firebase Authentication** | Email/password login with custom claims for role-based access control (staff vs. attendee). Server-side token verification via Firebase Admin SDK. | `middleware/auth.ts`, `hooks/useAuth.ts` |
-| **Firebase Realtime Database** | Push-based WebSocket sync for live zone occupancy, alerts, and simulation state. Zero-polling architecture — all updates are instant. | `services/firebase-admin.ts`, `context/ZoneContext.tsx` |
-| **Google Maps JavaScript API** | Satellite view with color-coded SVG circle markers (congestion-level), clickable InfoWindows, polyline navigation routes. Dynamic loading with retry. | `components/attendee/ZoneMap.tsx`, `NavigationPanel.tsx` |
-| **Vertex AI (Gemini 2.5 Flash)** | Three AI workflows via Google Cloud's Vertex AI platform: (1) Attendee chat grounded in live zone data, (2) Staff crowd management recommendations, (3) Automated alert triage. Includes conversation history, retry with exponential backoff, and dual-mode provider (Vertex AI in production, direct SDK in development). | `services/gemini.ts`, `routes/ai.ts` |
-| **Google Cloud Logging** | Structured JSON logging with severity levels (INFO/WARNING/ERROR) for all server operations. Replaces raw `console.log` — enables Cloud Monitoring dashboards and alerting. | `services/logger.ts` |
-| **Google Cloud Run** | Fully managed, auto-scaling container runtime. Multi-stage Docker build for minimal image size. Health checks, trust proxy for load balancer headers. | `Dockerfile`, `server/src/index.ts` |
+## 🚀 Core Intelligence Pillars
 
-## Assumptions & Refinements Needed
-To build this prototype within the hackathon time constraints, several assumptions were made:
-- **Data Collection:** We assume the venue has physical IoT sensors (turnstiles, cameras) capable of reporting live occupancy to the API. Currently, this is simulated using a backend "tick" engine for demonstration purposes.
-- **Venue Customization:** While specifically mapped to Wankhede Stadium for this prototype, the core VenueFlow architecture is fully agnostic. It can be instantly customized for any other stadium, airport, or mall simply by adjusting the 6 JSON zones and their respective capacities/coordinates in the database seeder.
-- **Stand Mapping:** The polygonal physical boundaries of the stands are currently represented by precise point coordinates on the map. In a fully refined production build, these would be mapped as full geometry polygons on Google Maps.
-- **Refinement:** More historical data would be needed to refine the wait-time exponential growth algorithms for different types of zones (e.g., restrooms vs. entry gates).
+### 1. The Tactical AI Brain (Gemini 1.5 Flash)
+Unlike basic reporting systems, CrowdShield's AI acts as a **Live Control Center**. Every 5 seconds, it evaluates:
+*   **Prediction**: Future congestion levels based on current flow rates.
+*   **Action**: Immediate tactical directives for staff (e.g., "Redirect Gate A flow to Concourse B").
+*   **Reasoning**: Data-backed justifications for every decision to build operator trust.
 
-## Setup & Running Locally
-1. Clone the repository.
-2. Ensure you have a `.env` file containing Firebase, Gemini, and Google Maps API keys.
-3. Install dependencies: `npm install` in both `/client` and `/server`.
-4. Start backend: `cd server && npm run dev`
-5. Start frontend: `cd client && npm run dev`
-6. Click **Start Demo** on the bottom right of the homepage to activate the live simulation engine.
+### 2. Bidirectional Dijkstra Navigation
+Our custom-built navigation engine uses a **Bidirectional Dijkstra** algorithm to find the least congested paths through the stadium. By searching from both start and end points simultaneously, we deliver ultra-fast routing even during massive attendee surges.
 
-## Testing
-- **Framework:** Vitest  
-- **Server Tests:** `tests/server/zone-calculator.test.ts` (20 tests), `tests/server/api-validation.test.ts` (21 tests), `tests/server/logger.test.ts` (7 tests)  
-- **Client Tests:** `src/__tests__/utils/status.test.ts` (15 tests), `src/__tests__/utils/formatters.test.ts` (11 tests), `src/__tests__/components/StatusBadge.test.tsx` (10 tests), `src/__tests__/components/LoadingSpinner.test.tsx` (8 tests), `src/__tests__/components/ErrorBoundary.test.tsx` (7 tests)  
-- **Total:** 99 tests across 8 test files (server: 48, client: 51)  
-- **Coverage:** Core business logic, utility functions, component rendering, accessibility attributes, Zod schema validation  
-- **Run:** `npm test` (server) or `cd client && npm test` (client)
+### 3. Real-time Firebase Sync
+Zero-polling architecture. Every occupancy change, alert creation, and AI recommendation is synced instantly across all attendee and staff devices using **Firebase Realtime Database**.
 
-## Evaluation Focus Areas Addressed
-- **Code Quality:** Clean monorepo with strict TypeScript (zero `any` types, zero lint suppressions), modularized components, structured logging, comprehensive JSDoc documentation, DRY principle enforcement, and named constants for all algorithmic parameters.
-- **Security:** Firebase Auth with custom claims, 3-tier rate limiting, Helmet security headers, Zod input validation, CORS allowlist, and error sanitization in production.
-- **Efficiency:** Zero-polling WebSocket architecture, `useMemo` context optimization, O(1) zone lookups, server-side pathfinding, code splitting, and PWA caching.
-- **Testing:** 99 passing unit tests across server and client, covering zone status derivation, wait time algorithms, Dijkstra pathfinding, API validation schemas, utility functions, component rendering, and accessibility attributes.
-- **Accessibility:** 60+ ARIA attributes, `aria-live` regions, full WCAG tab patterns, semantic HTML, keyboard navigation, and `prefers-reduced-motion` support.
-- **Google Services:** 6 deeply integrated services — Firebase Auth, Firebase RTDB, Google Maps JS API, Vertex AI (Gemini 2.5 Flash), Google Cloud Logging, and Google Cloud Run.
+---
+
+## 🛠️ Stack & Architecture
+
+| Layer | Technology | Key Features |
+| :--- | :--- | :--- |
+| **Frontend** | React + Vite + TypeScript | Glassmorphic UI, Emergency Glitch FX, Google Maps API |
+| **Backend** | Node.js + Express | Bi-directional Dijkstra, GCP Vertex AI Integration |
+| **Database** | Firebase RTDB | Real-time state synchronization, Role-based auth |
+| **Cloud** | Google Cloud Run | Auto-scaling production deployment (Asia-South1) |
+
+---
+
+## 🛡️ Role-Based Interfaces
+
+*   **Attendee Portal**: Interactive stadium map, AI-powered "Ask AI" assistant, and congestion-aware routing.
+*   **Staff Command Center**: Live zone monitoring, one-click Emergency Chaos simulation, and Tactical AI Readouts.
+*   **Emergency Bridging**: Support for Legacy tactical roles (`fire`, `medical`, `police`) with specialized security claims.
+
+---
+
+## 🏗️ Local Setup
+
+1. **Clone & Install**:
+   ```bash
+   git clone https://github.com/Prince-Tagadiya/CrowdShield
+   cd CrowdShield
+   npm install
+   ```
+2. **Environment**: Create a `.env` in the root with your `VITE_GEMINI_API_KEY` and `VITE_FIREBASE_API_KEY`.
+3. **Run**:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## ⚖️ Security & Performance
+*   **Credential Masking**: Automated GitHub secret purging and GCP Environment variables.
+*   **Rate Limiting**: Intelligent throttling for AI endpoints to prevent abuse.
+*   **Node 20 (LTS)**: Optimized for long-term stability and compatibility.
+
+---
+
+**Developed for the VenueFlow Challenge.**
+**Live Version**: [https://crowdshield-864518919258.asia-south1.run.app](https://crowdshield-864518919258.asia-south1.run.app)
