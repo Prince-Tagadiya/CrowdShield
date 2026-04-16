@@ -5,29 +5,37 @@
  *          real-time listening, and status updates.
  * 
  * Firestore Collections:
- *   - alerts: { type, location, status, teams, message, timestamp }
+ *   - alerts: { type, location, status, teams, message, severity, timestamp }
+ * 
+ * Flow:
+ *   1. Attendee reports → saveAlertToDB (status: "pending")
+ *   2. Admin sees alert → updateAlertStatus (status: "approved")
+ *   3. Team dispatches → updateAlertStatus (status: "dispatched")
+ *   4. Team resolves → updateAlertStatus (status: "resolved")
  */
 
 import {
   db, collection, addDoc, getDocs, query, orderBy, serverTimestamp,
   onSnapshot, doc, updateDoc
 } from './firebase.js';
+import { setState } from './state.js';
 
 const ALERTS_COLLECTION = 'alerts';
 
 /**
  * Saves a new alert to Firestore.
- * @param {object} alertData - { type, location, teams, message }
+ * @param {object} alertData - { type, location, teams, message, severity }
  * @returns {string|null} - Firestore document ID or null on failure
  */
 export async function saveAlertToDB(alertData) {
   try {
     const docRef = await addDoc(collection(db, ALERTS_COLLECTION), {
-      type:      alertData.type,
-      location:  alertData.location,
+      type:      alertData.type || 'unknown',
+      location:  alertData.location || 'Unknown Area',
       status:    'pending',
       teams:     alertData.teams || [],
       message:   alertData.message || '',
+      severity:  alertData.severity || 'medium',
       timestamp: serverTimestamp()
     });
     console.log('[Firestore] Alert saved:', docRef.id);
@@ -55,7 +63,8 @@ export async function fetchAlerts() {
 
 /**
  * Subscribes to real-time alert updates from Firestore.
- * @param {function} callback - Called with updated alerts array
+ * Automatically updates the central state with fresh alerts.
+ * @param {function} [callback] - Optional extra callback
  * @returns {function} - Unsubscribe function
  */
 export function listenToAlerts(callback) {
@@ -63,10 +72,15 @@ export function listenToAlerts(callback) {
     const q = query(collection(db, ALERTS_COLLECTION), orderBy('timestamp', 'desc'));
     return onSnapshot(q, (snap) => {
       const alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      callback(alerts);
+      // Update central state — all subscribers will be notified
+      setState('alerts', alerts);
+      // Optional extra callback
+      if (callback) callback(alerts);
+    }, (err) => {
+      console.error('[Firestore] Listener error:', err.message);
     });
   } catch (err) {
-    console.error('[Firestore] Listener failed:', err.message);
+    console.error('[Firestore] Listener setup failed:', err.message);
     return () => {}; // Return no-op unsubscribe
   }
 }
@@ -90,17 +104,30 @@ export async function updateAlertStatus(alertId, newStatus, assignedTeams) {
 
 /**
  * Routes an alert to the correct teams based on event type.
- * @param {object} alertData - { type, location, teams, response }
+ * @param {object} alertData - { intent/type, location, teams, response/message }
  * @returns {object} - Enriched alert with routing metadata
  */
 export function routeAlert(alertData) {
-  const alert = {
-    id: Date.now(),
-    type: alertData.intent || alertData.type,
-    location: alertData.location,
-    teams: alertData.teams || ['police'],
-    msg: alertData.response || alertData.message || '',
-    status: 'Pending'
+  const type = alertData.intent || alertData.type || 'crowd';
+
+  // Route to correct teams based on type
+  let teams = alertData.teams || [];
+  if (teams.length === 0) {
+    const teamMap = {
+      fire:       ['fire', 'police'],
+      medical:    ['medical'],
+      crowd:      ['police'],
+      lost_found: ['police']
+    };
+    teams = teamMap[type] || ['police'];
+  }
+
+  return {
+    type,
+    location: alertData.location || 'Unknown Area',
+    teams,
+    message: alertData.response || alertData.message || '',
+    severity: alertData.severity || 'medium',
+    status: 'pending'
   };
-  return alert;
 }

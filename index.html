@@ -3,18 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CrowdShield - Intelligent AI Safety Command</title>
-  <meta name="description" content="AI-powered stadium crowd management and safety coordination system.">
+  <title>CrowdShield — AI-Powered Crowd Safety System</title>
+  <meta name="description" content="AI-powered stadium crowd management and real-time safety coordination system with role-based dashboards.">
+  <meta name="theme-color" content="#08131f">
+  <meta name="color-scheme" content="dark light">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
   
+  <!-- GLOBAL LOADER -->
+  <div id="app-loader" class="hidden">
+    <div class="loader-content">
+      <div class="loader-spinner"></div>
+      <div class="loader-text">CrowdShield <span class="scanning">Initializing...</span></div>
+    </div>
+  </div>
+
   <!-- ACCESSIBILITY: Skip to content -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <!-- APP NAVIGATION -->
   <nav id="app-nav" class="hidden" aria-label="Main Navigation">
-    <div class="logo">CrowdShield <span id="view-title" aria-hidden="true"></span></div>
+    <div class="logo">CrowdShield <span id="view-title"></span></div>
     <div class="user-info">
       <span id="user-email" aria-label="Current User"></span>
       <span id="role-badge" class="badge"></span>
@@ -22,120 +36,154 @@
     </div>
   </nav>
 
-  <!-- MAIN CONTENT AREA -->
+  <!-- MAIN CONTENT -->
   <main id="main-content">
     
     <!-- LOGIN SCREEN -->
     <section id="login-screen" aria-labelledby="login-heading">
       <div class="login-card">
-        <h1 id="login-heading">CrowdShield</h1>
-        <p class="subtitle">AI-Powered Security Gateway</p>
+        <h1>CrowdShield</h1>
+        <p class="subtitle">AI-Powered Safety Command</p>
         <form id="login-form">
-          <label for="email" class="sr-only">Email</label>
-          <input type="text" id="email" placeholder="Email (e.g. admin@test.com)" required>
-          
-          <label for="password" class="sr-only">Password</label>
-          <input type="password" id="password" placeholder="Password" required>
-          
-          <button type="submit" id="login-btn" aria-label="Click to log in">Secure Login</button>
-          <div id="login-error" style="color: var(--fire); font-size: 0.8rem; margin-top: 10px; display: none;"></div>
+          <label class="sr-only" for="email">Email address</label>
+          <input type="text" id="email" placeholder="Email (Firebase account)" autocomplete="username" required>
+          <label class="sr-only" for="password">Password</label>
+          <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+          <button type="submit" id="login-btn">Secure Login</button>
+          <div id="login-error" class="hidden" style="color: var(--fire); margin-top: 10px;" aria-live="polite"></div>
         </form>
         <div class="role-hint">
-          Test Emails: admin@test.com, fire@test.com, med@test.com, pol@test.com, user@test.com
+          <strong>Access:</strong> Sign in with a Firebase user that has an assigned CrowdShield role claim.
         </div>
       </div>
     </section>
 
-    <!-- DASHBOARD CONTAINER -->
     <div id="dashboard-container" class="dashboard hidden">
       
       <!-- ADMIN VIEW -->
-      <section id="view-admin" class="view hidden" aria-labelledby="admin-title">
-        <aside class="panel admin-sidebar" aria-label="Gate Analytics and Simulation">
-          <h2 id="admin-title">Analytics</h2>
-          <div id="gate-stats" role="region" aria-live="polite"></div>
+      <section id="view-admin" class="view hidden">
+        <aside class="admin-sidebar" aria-label="Gate Statistics">
+          <h2 class="section-title">Gate Analytics</h2>
+          <div id="gate-stats"></div>
           
-          <hr class="divider">
+          <div style="margin: 20px 0; border-top: 1px solid var(--border)"></div>
           
-          <h3>Simulation Engine</h3>
-          <button id="trigger-event-btn" class="btn-action btn-dispatch full-width" aria-label="Simulate a random stadium alert">
-            Random Alert
-          </button>
+          <h2 class="section-title">Simulation</h2>
+          <button id="trigger-event-btn" class="btn-ai-submit" style="width: 100%; height: 44px; font-size: 0.8rem">⚡ Simulate Incident</button>
         </aside>
 
-        <div class="admin-main">
-          <!-- AI COMMAND PANEL -->
-          <section class="ai-console-panel" aria-label="AI Operational Command">
-            <div class="ai-input-wrapper">
-              <label for="ai-command-input" class="sr-only">Enter AI Command</label>
-              <textarea id="ai-command-input" placeholder="Admin Command Console (e.g., 'Deploy fire team to Gate A')"></textarea>
-              <button id="ai-submit-btn" aria-label="Send command to AI">Execute</button>
+        <main class="admin-main">
+          <section class="ai-console">
+            <div class="ai-input-row">
+              <label class="sr-only" for="ai-command-input">AI command console</label>
+              <textarea id="ai-command-input" placeholder="Command Console (e.g. 'Deploy fire team to Gate A')"></textarea>
+              <button id="ai-submit-btn" class="btn-ai-submit" aria-label="Execute AI command">EXECUTE</button>
             </div>
-            <div id="ai-response-log" class="ai-log" role="log" aria-live="polite">
-              Operational...
-            </div>
+            <div id="ai-response-log" class="ai-log" aria-live="polite">System Grounded & Ready.</div>
           </section>
 
-          <div class="stadium-oval" id="stadium-map" role="img" aria-label="Live stadium map showing gates and worker locations"></div>
-          
-          <!-- Incoming Reports Feed -->
-          <div id="incoming-reports" class="alert-card hidden" style="position: absolute; bottom: 20px; left: 20px; width: 350px; border-color: var(--warning);">
-            <h4>⚠️ New Report Received</h4>
-            <p id="report-summary"></p>
-            <div id="report-actions" style="margin-top:10px;"></div>
+          <div class="map-container">
+            <div id="stadium-root" class="stadium-3d">
+              <div class="stadium-walls"></div>
+              <div class="stadium-pitch"></div>
+              <div id="stadium-map"></div>
+            </div>
+
+            <div class="map-controls">
+              <button class="btn-map" id="btn-zoom-in" title="3D View" aria-label="Zoom into tactical map">⊕</button>
+              <button class="btn-map" id="btn-zoom-out" title="Top View" aria-label="Reset tactical map">⊖</button>
+            </div>
           </div>
-          
-          <div id="active-alert-widget" class="alert-card hidden" role="alert"></div>
-        </div>
+
+          <section class="admin-map-panel" aria-labelledby="ops-map-title">
+            <div class="panel-copy">
+              <h2 id="ops-map-title">Venue Intelligence Map</h2>
+              <p>Google Maps view for external orientation while the tactical field stays focused on operations.</p>
+            </div>
+            <div id="admin-google-map" class="admin-google-map" role="img" aria-label="Operations venue map"></div>
+            <p id="admin-map-status" class="map-status" aria-live="polite">Loading operations map…</p>
+          </section>
+        </main>
+
+        <section id="active-alerts-overlay" class="alert-overlay-list" aria-label="Active Incident Feed" aria-live="polite"></section>
       </section>
 
       <!-- TEAM VIEW -->
-      <section id="view-team" class="view team-view hidden" aria-labelledby="team-title">
-        <h2 id="team-title">Operations Center</h2>
-        <div id="team-alerts" class="alerts-container" role="feed">
-          <p>Listening for team-specific alerts...</p>
-        </div>
+      <section id="view-team" class="view hidden">
+        <main class="team-main">
+          <header class="team-header">
+            <h1 id="team-title">Unit Ops</h1>
+            <p>High-Priority Emergency Response Center</p>
+          </header>
+          <div id="team-alerts" class="alert-grid"></div>
+        </main>
       </section>
 
       <!-- ATTENDEE VIEW -->
-      <section id="view-attendee" class="view attendee-view hidden" aria-labelledby="attendee-title">
-        <div id="emergency-banner" class="emergency-banner hidden" role="alert" aria-live="assertive"></div>
-        
-        <header>
-          <h1 id="attendee-title">Stadium Guide</h1>
-          <p>Real-time assistant for your safety.</p>
-        </header>
+      <section id="view-attendee" class="view hidden">
+        <div class="view-attendee">
+          <div id="emergency-banner" class="emergency-banner hidden" aria-live="assertive"></div>
+          <header class="attendee-hero">
+            <h1>Stadium Guide</h1>
+            <p>Your real-time campus safety partner.</p>
+          </header>
 
-        <div class="action-grid" role="group" aria-label="Navigation assistance">
-          <button class="big-btn" id="btn-guide-food" aria-label="Find best food option">🍔 Find Food</button>
-          <button class="big-btn" id="btn-guide-exit" aria-label="Find fastest exit">🏃 Fastest Exit</button>
-          <button class="big-btn" id="btn-guide-washroom" aria-label="Find nearest washroom">🚻 Washrooms</button>
-          <button class="big-btn" id="btn-guide-gate" aria-label="Find least crowded gate">🚪 Gates</button>
-        </div>
+          <section class="attendee-insights" aria-label="Live attendee insights">
+            <article class="insight-card">
+              <span class="insight-label">Best Entry</span>
+              <strong id="insight-best-gate">Calculating…</strong>
+            </article>
+            <article class="insight-card">
+              <span class="insight-label">Fastest Exit</span>
+              <strong id="insight-best-exit">Calculating…</strong>
+            </article>
+            <article class="insight-card">
+              <span class="insight-label">Active Alerts</span>
+              <strong id="insight-alert-count">0</strong>
+            </article>
+          </section>
 
-        <div class="report-box" style="margin-top: 40px; width: 100%; max-width: 600px; text-align: left;">
-          <h3>Report an Issue</h3>
-          <p style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">Spotted something? Let the AI Command Center know.</p>
-          <div style="display: flex; gap: 10px;">
-            <input type="text" id="report-input" placeholder="Describe the issue (e.g. 'Fire at Section 2')" style="flex:1; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-            <button id="report-submit-btn" class="btn-action btn-dispatch" style="padding: 12px 20px;">Send Report</button>
+          <section class="venue-map-panel" aria-labelledby="venue-map-title">
+            <div class="panel-copy">
+              <h2 id="venue-map-title">Live Venue Map</h2>
+              <p>Google Maps satellite view with gate crowd signals for faster navigation.</p>
+            </div>
+            <div id="attendee-map" class="attendee-map" role="img" aria-label="Live venue map"></div>
+            <p id="map-status" class="map-status" aria-live="polite">Loading venue map…</p>
+          </section>
+          
+          <div class="attendee-grid">
+            <button class="btn-guidance" id="btn-guide-food" aria-label="Find best food stall">🍔<br>Food</button>
+            <button class="btn-guidance" id="btn-guide-exit" aria-label="Find fastest exit">🏃<br>Exits</button>
+            <button class="btn-guidance" id="btn-guide-washroom" aria-label="Find best washroom">🚻<br>Washrooms</button>
+            <button class="btn-guidance" id="btn-guide-gate" aria-label="Find best gate">🚪<br>Gates</button>
           </div>
-          <div id="report-feedback" style="margin-top:10px; font-size: 0.9rem; font-style: italic; color: var(--medical); display: none;">Report sent to Command Center.</div>
+
+          <div id="attendee-result" class="hidden" style="margin-top: 30px;" aria-live="polite"></div>
+
+          <div class="report-box" style="margin-top: 60px; max-width: 500px; width: 100%;">
+            <hr class="divider">
+            <h3>Report Emergency</h3>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+              <label class="sr-only" for="report-input">Emergency report</label>
+              <input type="text" id="report-input" class="report-input" placeholder="What's happening?">
+              <button id="report-submit-btn" class="btn-ai-submit" style="height: auto;" aria-label="Submit emergency report">Report</button>
+            </div>
+            <div id="report-feedback" class="hidden" aria-live="polite"></div>
+          </div>
         </div>
-        
-        <div id="attendee-result" class="result-box hidden" role="region" aria-live="polite"></div>
       </section>
     </div>
   </main>
 
-  <!-- GOVERNANCE: GOVERNANCE MODAL -->
-  <dialog id="confirm-modal" class="modal">
-    <div class="modal-content">
-      <h2 id="modal-title">Confirm Action</h2>
-      <p id="modal-desc">This action requires human authorization.</p>
-      <div class="modal-actions">
-        <button id="modal-confirm" class="btn-confirm">Approve</button>
-        <button id="modal-cancel" class="btn-cancel">Cancel</button>
+  <!-- CONFIRMATION MODAL -->
+  <dialog id="confirm-modal" class="modal" aria-labelledby="modal-title" aria-describedby="modal-desc">
+    <div class="modal-box">
+      <h2 id="modal-title">Authorize Action?</h2>
+      <p id="modal-desc" style="margin-top: 10px;"></p>
+      <div style="display: flex; gap: 12px; margin-top: 30px;">
+        <button id="modal-confirm" class="btn-ai-submit" style="flex: 1;">APPROVE</button>
+        <button id="modal-cancel" class="btn-logout" style="flex: 1;">Cancel</button>
       </div>
     </div>
   </dialog>

@@ -9,15 +9,13 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import {
-  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, getIdTokenResult
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import {
   getFirestore, collection, addDoc, getDocs,
   query, orderBy, serverTimestamp,
   onSnapshot, doc, updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-
-import { ROLE_MAP } from './data.js';
 
 // --- CONFIGURATION (from environment) --- //
 const firebaseConfig = {
@@ -35,16 +33,22 @@ const auth = getAuth(app);
 const db   = getFirestore(app);
 
 /**
- * Determines system role from a user's email address.
- * @param {string} email - The authenticated user's email
- * @returns {string} - One of: admin, fire, medical, police, attendee
+ * Resolves a user's role from Firebase custom claims when present.
+ * @param {import('https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js').User} user
+ * @returns {Promise<string>}
  */
-export function identifyUserRole(email) {
-  if (!email) return 'attendee';
-  const prefix = email.split('@')[0].toLowerCase();
-  for (const [key, role] of Object.entries(ROLE_MAP)) {
-    if (prefix.startsWith(key)) return role;
+export async function resolveUserRole(user) {
+  if (!user) return 'attendee';
+
+  try {
+    const token = await getIdTokenResult(user, true);
+    if (token?.claims?.role) {
+      return String(token.claims.role);
+    }
+  } catch (error) {
+    console.warn('[Auth] Failed to resolve custom claims:', error?.message || error);
   }
+
   return 'attendee';
 }
 

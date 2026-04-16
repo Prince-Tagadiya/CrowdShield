@@ -8,6 +8,8 @@
  * Lower score = Better option.
  */
 
+import { GATES, EXITS, FOOD_STALLS, WASHROOMS } from './data.js';
+
 /** Weight map for crowd density levels */
 const CROWD_WEIGHTS = { high: 50, med: 25, low: 10 };
 
@@ -25,12 +27,45 @@ export function calculateScore(item) {
 
 /**
  * Finds the best option from a list of facilities.
- * @param {Array} options - Array of gate/exit objects
+ * @param {Array} options - Array of facility objects
  * @returns {object|null} - The facility with the lowest score
  */
-export function getBestGate(options) {
+export function getBestOption(options) {
   if (!options || options.length === 0) return null;
   return options.map(calculateScore).sort((a, b) => a.score - b.score)[0];
+}
+
+/**
+ * Finds the least crowded gate.
+ * @param {Array} [gateOverride] - Optional gate array (for live data)
+ * @returns {object|null}
+ */
+export function getBestGate(gateOverride) {
+  return getBestOption(gateOverride || GATES);
+}
+
+/**
+ * Finds the fastest exit route.
+ * @returns {object|null}
+ */
+export function getBestExit() {
+  return getBestOption(EXITS);
+}
+
+/**
+ * Finds the best food stall (lowest wait + closest).
+ * @returns {object|null}
+ */
+export function getBestFood() {
+  return getBestOption(FOOD_STALLS);
+}
+
+/**
+ * Finds the best washroom.
+ * @returns {object|null}
+ */
+export function getBestWashroom() {
+  return getBestOption(WASHROOMS);
 }
 
 /**
@@ -57,7 +92,7 @@ export function getTeamsForEvent(type) {
  */
 export function validateLocation(loc) {
   if (!loc || typeof loc !== 'string') return 'Unknown Area';
-  const clean = loc.trim().replace(/[<>]/g, ''); // Strip unsafe HTML chars
+  const clean = loc.trim().replace(/[<>]/g, '');
   if (clean.length === 0) return 'Unknown Area';
   return clean;
 }

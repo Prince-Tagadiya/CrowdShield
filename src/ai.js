@@ -1,89 +1,101 @@
 /**
- * ai.js — Google Gemini API Integration
- * 
- * Purpose: Sends natural language input + stadium telemetry to Gemini,
- *          receives structured JSON with intent, location, severity, and actions.
- * 
- * Security: API key loaded from environment variable VITE_GEMINI_API_KEY.
+ * ai.js — Browser-side AI client
+ *
+ * Purpose: send sanitized UI requests to the backend AI route.
+ * The Gemini key stays server-side in production and the frontend only
+ * receives validated JSON responses.
  */
-
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const MODEL   = 'gemini-1.5-flash';
-const BASE    = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 /**
- * Processes a natural language command through Gemini AI.
- * @param {string} userInput - Free-text incident report or question
- * @param {object} telemetry - Current stadium state { gates, activeAlert }
- * @returns {object} - Structured action object { intent, location, severity, teams, actions, response, isCritical }
+ * Processes a natural language command through the backend AI service.
+ * Falls back locally if the API is unavailable.
+ * @param {string} userInput
+ * @param {object} telemetry
+ * @returns {Promise<object>}
  */
-export async function processAIInput(userInput, telemetry) {
-  if (!API_KEY) {
-    console.warn('[AI] Gemini API key not configured. Using fallback.');
-    return buildFallbackResponse(userInput);
+export async function processAIInput(userInput, telemetry = {}) {
+  if (!userInput || typeof userInput !== 'string' || userInput.trim().length === 0) {
+    return buildFallbackResponse('unknown input');
   }
 
-  // Sanitize user input to prevent prompt injection
   const sanitized = userInput.replace(/[<>{}]/g, '').slice(0, 500);
 
-  const systemInstruction = `You are the CrowdShield Operational AI.
-Analyze the user's message alongside current stadium telemetry.
-Identify the intent, location, and severity.
-Output strictly VALID JSON:
-{
-  "intent": "fire | medical | crowd | navigation | lost_found",
-  "location": "string",
-  "severity": "high | medium | low",
-  "actions": ["dispatch_fire", "notify_police", "evacuate_area"],
-  "teams": ["fire", "medical", "police"],
-  "response": "human_friendly_1_sentence_summary",
-  "isCritical": true
-}`;
-
-  const prompt = `STADIUM TELEMETRY: ${JSON.stringify(telemetry)}
-USER MESSAGE: "${sanitized}"
-Extract data and provide actionable instructions.`;
-
   try {
-    const res = await fetch(`${BASE}/${MODEL}:generateContent?key=${API_KEY}`, {
+    const res = await fetch('/api/ai/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: { responseMimeType: 'application/json' }
-      })
+        userInput: sanitized,
+        telemetry,
+      }),
     });
 
-    if (!res.ok) throw new Error(`Gemini API ${res.status}`);
+    if (!res.ok) {
+      throw new Error(`AI request failed with ${res.status}`);
+    }
 
     const data = await res.json();
-    return JSON.parse(data.candidates[0].content.parts[0].text);
+    return validateAIResponse(data);
   } catch (err) {
-    console.error('[AI] Request failed:', err.message);
-    return buildFallbackResponse(userInput);
+    console.error('[AI]', err instanceof Error ? err.message : err);
+    return buildFallbackResponse(sanitized);
   }
 }
 
 /**
- * Generates a basic structured response when AI is unavailable.
- * @param {string} input - Original user message
- * @returns {object} - Fallback action object
+ * Validates and normalizes the AI response shape.
+ * @param {object} raw
+ * @returns {object}
  */
-function buildFallbackResponse(input) {
-  const lower = input.toLowerCase();
-  let intent = 'crowd', teams = ['police'], isCritical = false;
-
-  if (lower.includes('fire'))    { intent = 'fire';    teams = ['fire', 'police']; isCritical = true; }
-  if (lower.includes('medic') || lower.includes('faint') || lower.includes('hurt'))
-                                 { intent = 'medical'; teams = ['medical'];        isCritical = true; }
-  if (lower.includes('lost'))    { intent = 'lost';    teams = ['police'];         isCritical = false; }
+export function validateAIResponse(raw) {
+  const validIntents = ['fire', 'medical', 'crowd', 'navigation', 'lost_found'];
+  const validTeams = ['fire', 'medical', 'police'];
 
   return {
-    intent, teams, isCritical,
+    intent: validIntents.includes(raw?.intent) ? raw.intent : 'crowd',
+    location: typeof raw?.location === 'string' ? raw.location : 'Unknown Area',
+    severity: ['high', 'medium', 'low'].includes(raw?.severity) ? raw.severity : 'medium',
+    actions: Array.isArray(raw?.actions) ? raw.actions.slice(0, 5) : [],
+    teams: Array.isArray(raw?.teams) ? raw.teams.filter(team => validTeams.includes(team)) : ['police'],
+    response: typeof raw?.response === 'string' ? raw.response : 'Alert processed.',
+    isCritical: typeof raw?.isCritical === 'boolean' ? raw.isCritical : false,
+  };
+}
+
+/**
+ * Generates a deterministic browser fallback when the backend is unreachable.
+ * @param {string} input
+ * @returns {object}
+ */
+export function buildFallbackResponse(input) {
+  const lower = (input || '').toLowerCase();
+  let intent = 'crowd';
+  let teams = ['police'];
+  let isCritical = false;
+
+  if (lower.includes('fire') || lower.includes('smoke') || lower.includes('burn')) {
+    intent = 'fire';
+    teams = ['fire', 'police'];
+    isCritical = true;
+  } else if (lower.includes('medic') || lower.includes('faint') || lower.includes('hurt') || lower.includes('injur') || lower.includes('bleed')) {
+    intent = 'medical';
+    teams = ['medical'];
+    isCritical = true;
+  } else if (lower.includes('lost') || lower.includes('missing') || lower.includes('child')) {
+    intent = 'lost_found';
+  } else if (lower.includes('crowd') || lower.includes('stampede') || lower.includes('push')) {
+    isCritical = true;
+  } else if (lower.includes('exit') || lower.includes('gate') || lower.includes('food') || lower.includes('washroom')) {
+    intent = 'navigation';
+  }
+
+  return {
+    intent,
+    teams,
+    isCritical,
     location: 'Reported Area',
-    severity: isCritical ? 'high' : 'medium',
-    actions: [`dispatch_${teams[0]}`],
-    response: `${intent.toUpperCase()} alert created. Manual routing required (AI offline).`
+    severity: isCritical ? 'high' : intent === 'navigation' ? 'low' : 'medium',
+    actions: [`dispatch_${teams[0] || 'police'}`],
+    response: `${intent.toUpperCase()} alert created. ${isCritical ? 'Immediate response required.' : 'Manual review recommended.'} (offline fallback mode)`,
   };
 }
