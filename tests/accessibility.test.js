@@ -28,6 +28,11 @@ describe('accessibility structure', () => {
     expect(main).not.toBeNull();
   });
 
+  it('wires the login section to a real heading', () => {
+    expect(document.getElementById('login-screen')?.getAttribute('aria-labelledby')).toBe('login-heading');
+    expect(document.getElementById('login-heading')?.textContent).toContain('CrowdShield');
+  });
+
   it('labels the main navigation', () => {
     expect(document.querySelector('nav[aria-label="Main Navigation"]')).not.toBeNull();
   });
@@ -35,6 +40,12 @@ describe('accessibility structure', () => {
   it('has labels for login fields', () => {
     expect(document.querySelector('label[for="email"]')).not.toBeNull();
     expect(document.querySelector('label[for="password"]')).not.toBeNull();
+  });
+
+  it('connects login inputs to help and error messaging', () => {
+    expect(document.getElementById('email')?.getAttribute('aria-describedby')).toBe('login-hint login-error');
+    expect(document.getElementById('password')?.getAttribute('aria-describedby')).toBe('login-hint login-error');
+    expect(document.getElementById('login-btn')?.getAttribute('aria-describedby')).toBe('login-hint');
   });
 
   it('uses password autocomplete attributes', () => {
@@ -51,6 +62,11 @@ describe('accessibility structure', () => {
     expect(document.getElementById('ai-submit-btn')?.getAttribute('aria-label')).toContain('Execute');
   });
 
+  it('connects the admin command input to its live response area', () => {
+    expect(document.getElementById('ai-console-title')).not.toBeNull();
+    expect(document.getElementById('ai-command-input')?.getAttribute('aria-describedby')).toBe('ai-response-log');
+  });
+
   it('marks AI response log as live content', () => {
     expect(document.getElementById('ai-response-log')?.getAttribute('aria-live')).toBe('polite');
   });
@@ -62,6 +78,7 @@ describe('accessibility structure', () => {
 
   it('marks incident feed as live', () => {
     expect(document.getElementById('active-alerts-overlay')?.getAttribute('aria-live')).toBe('polite');
+    expect(document.getElementById('active-alerts-overlay')?.getAttribute('aria-relevant')).toBe('additions text');
   });
 
   it('marks emergency banner as assertive', () => {
@@ -132,6 +149,7 @@ describe('accessibility structure', () => {
     expect(modal?.tagName).toBe('DIALOG');
     expect(modal?.getAttribute('aria-labelledby')).toBe('modal-title');
     expect(modal?.getAttribute('aria-describedby')).toBe('modal-desc');
+    expect(modal?.getAttribute('aria-modal')).toBe('true');
   });
 
   it('has a visible page title and description metadata', () => {
@@ -166,5 +184,23 @@ describe('accessibility structure', () => {
     expect(styles).toContain('button:focus-visible');
     expect(styles).toContain('input:focus-visible');
     expect(styles).toContain('outline: 3px solid');
+  });
+
+  it('supports reduced-motion users in CSS', () => {
+    expect(styles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(styles).toContain('animation-duration: 0.01ms !important;');
+    expect(styles).toContain('transition-duration: 0.01ms !important;');
+  });
+
+  it('sets explicit button types for interactive controls', () => {
+    expect(document.getElementById('ai-submit-btn')?.getAttribute('type')).toBe('button');
+    expect(document.getElementById('report-submit-btn')?.getAttribute('type')).toBe('button');
+    expect(document.getElementById('modal-confirm')?.getAttribute('type')).toBe('button');
+    expect(document.getElementById('modal-cancel')?.getAttribute('type')).toBe('button');
+  });
+
+  it('marks team alert updates as a live region', () => {
+    expect(document.getElementById('team-alerts')?.getAttribute('aria-live')).toBe('polite');
+    expect(document.getElementById('team-alerts')?.getAttribute('aria-relevant')).toBe('additions text');
   });
 });

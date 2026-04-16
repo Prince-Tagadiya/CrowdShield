@@ -42,14 +42,14 @@
     <!-- LOGIN SCREEN -->
     <section id="login-screen" aria-labelledby="login-heading">
       <div class="login-card">
-        <h1>CrowdShield</h1>
+        <h1 id="login-heading">CrowdShield</h1>
         <p class="subtitle" id="login-subtitle">AI-Powered Safety Command</p>
         <form id="login-form" aria-describedby="login-subtitle login-hint">
           <label class="sr-only" for="email">Email address</label>
-          <input type="email" id="email" placeholder="Email (Firebase account)" autocomplete="username" inputmode="email" required>
+          <input type="email" id="email" placeholder="Email (Firebase account)" autocomplete="username" inputmode="email" aria-describedby="login-hint login-error" required>
           <label class="sr-only" for="password">Password</label>
-          <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
-          <button type="submit" id="login-btn">Secure Login</button>
+          <input type="password" id="password" placeholder="Password" autocomplete="current-password" aria-describedby="login-hint login-error" required>
+          <button type="submit" id="login-btn" aria-describedby="login-hint">Secure Login</button>
           <div id="login-error" class="hidden" style="color: var(--fire); margin-top: 10px;" aria-live="assertive" role="alert"></div>
         </form>
         <div class="role-hint" id="login-hint">
@@ -75,11 +75,12 @@
         </aside>
 
         <main class="admin-main">
-          <section class="ai-console">
+          <section class="ai-console" aria-labelledby="ai-console-title">
+            <h2 id="ai-console-title" class="sr-only">Command console</h2>
             <div class="ai-input-row">
               <label class="sr-only" for="ai-command-input">AI command console</label>
-              <textarea id="ai-command-input" placeholder="Command Console (e.g. 'Deploy fire team to Gate A')"></textarea>
-              <button id="ai-submit-btn" class="btn-ai-submit" aria-label="Execute AI command">EXECUTE</button>
+              <textarea id="ai-command-input" placeholder="Command Console (e.g. 'Deploy fire team to Gate A')" aria-describedby="ai-response-log"></textarea>
+              <button id="ai-submit-btn" class="btn-ai-submit" type="button" aria-label="Execute AI command">EXECUTE</button>
             </div>
             <div id="ai-response-log" class="ai-log" aria-live="polite" role="status">System Grounded & Ready.</div>
           </section>
@@ -92,8 +93,8 @@
             </div>
 
             <div class="map-controls">
-              <button class="btn-map" id="btn-zoom-in" title="3D View" aria-label="Zoom into tactical map">⊕</button>
-              <button class="btn-map" id="btn-zoom-out" title="Top View" aria-label="Reset tactical map">⊖</button>
+              <button class="btn-map" id="btn-zoom-in" type="button" title="3D View" aria-label="Zoom into tactical map">⊕</button>
+              <button class="btn-map" id="btn-zoom-out" type="button" title="Top View" aria-label="Reset tactical map">⊖</button>
             </div>
           </div>
 
@@ -108,7 +109,7 @@
           </section>
         </main>
 
-        <section id="active-alerts-overlay" class="alert-overlay-list" aria-label="Active Incident Feed" aria-live="polite"></section>
+        <section id="active-alerts-overlay" class="alert-overlay-list" aria-label="Active Incident Feed" aria-live="polite" aria-relevant="additions text"></section>
       </section>
 
       <!-- TEAM VIEW -->
@@ -118,7 +119,7 @@
             <h1 id="team-title">Unit Ops</h1>
             <p>High-Priority Emergency Response Center</p>
           </header>
-          <div id="team-alerts" class="alert-grid"></div>
+          <div id="team-alerts" class="alert-grid" aria-live="polite" aria-relevant="additions text"></div>
         </main>
       </section>
 
@@ -157,10 +158,10 @@
           </section>
           
           <div class="attendee-grid">
-            <button class="btn-guidance" id="btn-guide-food" aria-label="Find best food stall">🍔<br>Food</button>
-            <button class="btn-guidance" id="btn-guide-exit" aria-label="Find fastest exit">🏃<br>Exits</button>
-            <button class="btn-guidance" id="btn-guide-washroom" aria-label="Find best washroom">🚻<br>Washrooms</button>
-            <button class="btn-guidance" id="btn-guide-gate" aria-label="Find best gate">🚪<br>Gates</button>
+            <button class="btn-guidance" id="btn-guide-food" type="button" aria-label="Find best food stall">🍔<br>Food</button>
+            <button class="btn-guidance" id="btn-guide-exit" type="button" aria-label="Find fastest exit">🏃<br>Exits</button>
+            <button class="btn-guidance" id="btn-guide-washroom" type="button" aria-label="Find best washroom">🚻<br>Washrooms</button>
+            <button class="btn-guidance" id="btn-guide-gate" type="button" aria-label="Find best gate">🚪<br>Gates</button>
           </div>
 
           <div id="attendee-result" class="hidden" style="margin-top: 30px;" aria-live="polite" role="status"></div>
@@ -172,7 +173,7 @@
             <div style="display: flex; gap: 10px; margin-top: 10px;">
               <label class="sr-only" for="report-input">Emergency report</label>
               <input type="text" id="report-input" class="report-input" placeholder="What's happening?" aria-describedby="report-help report-feedback">
-              <button id="report-submit-btn" class="btn-ai-submit" style="height: auto;" aria-label="Submit emergency report">Report</button>
+              <button id="report-submit-btn" class="btn-ai-submit" style="height: auto;" type="button" aria-label="Submit emergency report">Report</button>
             </div>
             <div id="report-feedback" class="hidden" aria-live="polite" role="status"></div>
           </div>
@@ -182,13 +183,13 @@
   </main>
 
   <!-- CONFIRMATION MODAL -->
-  <dialog id="confirm-modal" class="modal" aria-labelledby="modal-title" aria-describedby="modal-desc">
+  <dialog id="confirm-modal" class="modal" aria-labelledby="modal-title" aria-describedby="modal-desc" aria-modal="true">
     <div class="modal-box">
       <h2 id="modal-title">Authorize Action?</h2>
       <p id="modal-desc" style="margin-top: 10px;"></p>
       <div style="display: flex; gap: 12px; margin-top: 30px;">
-        <button id="modal-confirm" class="btn-ai-submit" style="flex: 1;">APPROVE</button>
-        <button id="modal-cancel" class="btn-logout" style="flex: 1;">Cancel</button>
+        <button id="modal-confirm" class="btn-ai-submit" type="button" style="flex: 1;">APPROVE</button>
+        <button id="modal-cancel" class="btn-logout" type="button" style="flex: 1;">Cancel</button>
       </div>
     </div>
   </dialog>

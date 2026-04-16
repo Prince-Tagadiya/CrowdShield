@@ -30,6 +30,7 @@ import { runAllTests } from './tests.js';
 // --- DOM CACHE --- //
 const DOM = {};
 let appConfig = { hasGoogleMaps: false, mapsApiKey: '' };
+let previousFocusedElement = null;
 
 // ========== INITIALIZATION ========== //
 
@@ -138,6 +139,7 @@ function setupAuthObserver() {
         resetState();
       }
       showView('login');
+      DOM['email']?.focus();
     }
   });
 }
@@ -263,6 +265,10 @@ function showView(view) {
   if (DOM['view-title']) DOM['view-title'].textContent = `• ${titles[role] || ''}`;
 
   if (view === 'attendee') document.body.classList.add('light-mode');
+  if (view === 'admin') DOM['ai-command-input']?.focus();
+  if (view === 'team') DOM['team-alerts']?.setAttribute('tabindex', '-1');
+  if (view === 'team') DOM['team-alerts']?.focus();
+  if (view === 'attendee') document.getElementById('btn-guide-food')?.focus();
   setState('activeView', view);
   toggleLoader(false);
 }
@@ -399,14 +405,18 @@ function renderAIResponse(result) {
 
 function showConfirmModal(action) {
   setState('pendingAIAction', action);
+  previousFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   if (DOM['modal-title']) DOM['modal-title'].textContent = `🚨 Confirm: ${(action.intent || 'ALERT').toUpperCase()}`;
   if (DOM['modal-desc'])  DOM['modal-desc'].textContent = action.response;
   DOM['confirm-modal']?.showModal();
+  DOM['modal-confirm']?.focus();
 }
 
 function closeConfirmModal() {
   DOM['confirm-modal']?.close();
   setState('pendingAIAction', null);
+  previousFocusedElement?.focus?.();
+  previousFocusedElement = null;
 }
 
 async function executePendingAction() {
@@ -799,8 +809,19 @@ function updateAttendeeInsights() {
 
 // ========== UTILITY HELPERS ========== //
 
-function showError(el, msg) { if (el) { el.textContent = msg; el.style.display = 'block'; } }
-function hideError(el) { if (el) el.style.display = 'none'; }
+function showError(el, msg) {
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  DOM['email']?.setAttribute('aria-invalid', 'true');
+  DOM['password']?.setAttribute('aria-invalid', 'true');
+}
+
+function hideError(el) {
+  if (el) el.style.display = 'none';
+  DOM['email']?.setAttribute('aria-invalid', 'false');
+  DOM['password']?.setAttribute('aria-invalid', 'false');
+}
 function setFeedback(el, msg, show) {
   if (!el) return;
   el.textContent = msg;
