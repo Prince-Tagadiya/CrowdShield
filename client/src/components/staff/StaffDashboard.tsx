@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { startChaos, resetStadium } from '../../services/api';
 import ZoneControl from './ZoneControl';
 import AlertManager from './AlertManager';
 import AIRecommendations from './AIRecommendations';
@@ -9,13 +10,29 @@ import LoadingSpinner from '../shared/LoadingSpinner';
 
 type TabKey = 'zones' | 'alerts' | 'ai';
 
-/**
- * Staff dashboard — protected route requiring authentication.
- * Three tabs: Zone Control, Alert Management, AI Recommendations.
- */
 export default function StaffDashboard() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>('zones');
+  const [demoAction, setDemoAction] = useState<string | null>(null);
+
+  const handleChaos = async () => {
+    setDemoAction('Activating Chaos Mode...');
+    try {
+      await startChaos();
+      setActiveTab('ai'); // Jump to AI to show it reacting
+    } finally {
+      setDemoAction(null);
+    }
+  };
+
+  const handleReset = async () => {
+    setDemoAction('Resetting Stadium...');
+    try {
+      await resetStadium();
+    } finally {
+      setDemoAction(null);
+    }
+  };
 
   if (loading) {
     return <LoadingSpinner label="Checking authentication..." />;
@@ -28,16 +45,32 @@ export default function StaffDashboard() {
   const tabs: Array<{ key: TabKey; label: string; icon: string }> = [
     { key: 'zones', label: 'Zone Control', icon: '📊' },
     { key: 'alerts', label: 'Alerts', icon: '🚨' },
-    { key: 'ai', label: 'AI Recommendations', icon: '🤖' },
+    { key: 'ai', label: 'AI Tactical HUD', icon: '🤖' },
   ];
 
   return (
     <section className="staff-dashboard" aria-label="Staff operations dashboard">
       <div className="dashboard-header">
-        <h2 className="section-title">Operations Dashboard</h2>
-        <p className="section-subtitle">
-          Logged in as <strong>{user.email}</strong>
-        </p>
+        <div className="dashboard-title-group">
+          <h2 className="section-title">Admin Command Center</h2>
+          <p className="section-subtitle">Logged in as {user.email}</p>
+        </div>
+        <div className="demo-controls">
+          <button 
+            className="btn-chaos" 
+            onClick={handleChaos} 
+            disabled={!!demoAction}
+          >
+            🚨 Start Emergency
+          </button>
+          <button 
+            className="btn-reset" 
+            onClick={handleReset} 
+            disabled={!!demoAction}
+          >
+            🛡️ Safety Reset
+          </button>
+        </div>
       </div>
 
       {/* Tab navigation */}

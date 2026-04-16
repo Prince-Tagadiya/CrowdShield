@@ -2244,3 +2244,75 @@ body {
 .ai-rec__field { font-size: var(--font-size-sm); line-height: 1.5; color: var(--color-text-secondary); }
 .ai-rec__field strong { color: var(--color-accent); font-weight: var(--font-weight-semibold); margin-right: 6px; }
 
+
+/* ─── Demo & Chaos UI ─── */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  padding: var(--space-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.demo-controls {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.btn-chaos {
+  background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+  color: white;
+  border: none;
+  padding: var(--space-md) var(--space-xl);
+  font-weight: 800;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px hsla(0, 84%, 60%, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-chaos:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px hsla(0, 84%, 60%, 0.5);
+}
+
+.btn-chaos:active {
+  transform: scale(0.95);
+}
+
+.btn-reset {
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  padding: var(--space-md) var(--space-xl);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-reset:hover {
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-accent);
+}
+
+/* ─── Emergency Glitch Effect for Critical Cards ─── */
+.status-critical, .zone-card--critical {
+  animation: emergency-glitch 0.2s infinite;
+}
+
+@keyframes emergency-glitch {
+  0% { transform: translate(0); }
+  25% { transform: translate(1px, 1px); }
+  50% { transform: translate(-1px, -1px); }
+  75% { transform: translate(1px, -1px); }
+  100% { transform: translate(0); }
+}
+

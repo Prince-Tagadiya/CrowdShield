@@ -112,3 +112,16 @@ export function getAIRecommendations(): Promise<AIRecommendationsResponse> {
     method: 'POST',
   });
 }
+// ─── Simulation API ───
+
+export function startChaos(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/simulate/chaos', { method: 'POST' });
+}
+
+export function resetStadium(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/simulate/reset', { method: 'POST' });
+}
+
+export function tickSimulation(): Promise<any> {
+  return apiFetch('/simulate/tick', { method: 'POST' });
+}
