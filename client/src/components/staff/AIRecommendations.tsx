@@ -90,19 +90,30 @@ export default function AIRecommendations() {
               </span>
             </div>
           )}
-          <ol className="ai-recommendations__list">
-            {recommendations.map((rec, index) => (
-              <li key={index} className={`ai-recommendations__item ${getPriorityClass(index)}`}>
+          <div className="ai-recommendations__list">
+            {recommendations.map((rec: any, index) => (
+              <div key={index} className={`ai-recommendations__item ai-rec--${rec.color_code?.toLowerCase() || 'yellow'}`}>
                 <div className="ai-rec__header">
-                  <span className="ai-recommendations__counter">{index + 1}</span>
-                  <span className={`ai-rec__priority ${getPriorityClass(index)}`}>
-                    {getPriorityLabel(index)}
+                  <span className={`ai-rec__priority risk--${rec.risk_level?.toLowerCase().replace(' ', '-')}`}>
+                    {rec.risk_level}
                   </span>
+                  <span className="ai-rec__zone">📍 {rec.zone}</span>
+                  <span className="ai-rec__density">👥 {rec.density}</span>
                 </div>
-                <span className="ai-rec__text">{rec}</span>
-              </li>
+                <div className="ai-rec__body">
+                  <div className="ai-rec__field">
+                    <strong>🔮 Prediction:</strong> {rec.prediction}
+                  </div>
+                  <div className="ai-rec__field">
+                    <strong>🛡️ Action:</strong> {rec.action}
+                  </div>
+                  <div className="ai-rec__field">
+                    <strong>🧠 Reasoning:</strong> {rec.reasoning}
+                  </div>
+                </div>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       )}
 

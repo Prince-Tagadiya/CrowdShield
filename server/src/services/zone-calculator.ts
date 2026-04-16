@@ -78,26 +78,18 @@ export function congestionRatio(currentOccupancy: number, capacity: number): num
 }
 
 /**
- * Dijkstra's algorithm for finding the least-congested path between two zones.
+ * Bidirectional Dijkstra's algorithm for finding the least-congested path.
+ * Searches from both start and end points simultaneously to optimize speed
+ * in complex venue graphs. 
  *
- * Each zone is a node. Edges connect adjacent zones. Edge weight = congestion
- * ratio of the destination zone. This means the algorithm avoids routing
- * through heavily congested zones.
- *
- * @param zones - Map of zone ID to zone data
- * @param startZoneId - Starting zone ID
- * @param endZoneId - Destination zone ID
- * @returns Ordered path of zones with their status, or null if no path exists
+ * Edge weight = congestion ratio of the destination zone + small base weight.
  */
 export function findLeastCongestedPath(
   zones: Map<string, { name: string; currentOccupancy: number; capacity: number; status: ZoneStatus; waitTimeMinutes: number; adjacentZones: string[] }>,
   startZoneId: string,
   endZoneId: string
 ): { path: Array<{ zoneId: string; zoneName: string; status: ZoneStatus; waitTimeMinutes: number }>; totalCongestionScore: number } | null {
-  if (!zones.has(startZoneId) || !zones.has(endZoneId)) {
-    return null;
-  }
-
+  if (!zones.has(startZoneId) || !zones.has(endZoneId)) return null;
   if (startZoneId === endZoneId) {
     const zone = zones.get(startZoneId)!;
     return {
@@ -106,75 +98,115 @@ export function findLeastCongestedPath(
     };
   }
 
-  // Dijkstra's algorithm
-  const distances = new Map<string, number>();
-  const previous = new Map<string, string | null>();
-  const unvisited = new Set<string>();
+  // Two-way search structures
+  const forwardDist = new Map<string, number>();
+  const backwardDist = new Map<string, number>();
+  const forwardPrev = new Map<string, string | null>();
+  const backwardPrev = new Map<string, string | null>();
+  const forwardVisited = new Set<string>();
+  const backwardVisited = new Set<string>();
 
   for (const [id] of zones) {
-    distances.set(id, Infinity);
-    previous.set(id, null);
-    unvisited.add(id);
+    forwardDist.set(id, Infinity);
+    backwardDist.set(id, Infinity);
+    forwardPrev.set(id, null);
+    backwardPrev.set(id, null);
   }
-  distances.set(startZoneId, 0);
 
-  while (unvisited.size > 0) {
-    // Find unvisited node with smallest distance
-    let currentId: string | null = null;
-    let currentDist = Infinity;
-    for (const id of unvisited) {
-      const dist = distances.get(id) ?? Infinity;
-      if (dist < currentDist) {
-        currentDist = dist;
-        currentId = id;
+  forwardDist.set(startZoneId, 0);
+  backwardDist.set(endZoneId, 0);
+
+  let meetingNode: string | null = null;
+  let minPathLen = Infinity;
+
+  // Expansion queue logic
+  const getNextNode = (distMap: Map<string, number>, visited: Set<string>) => {
+    let bestId: string | null = null;
+    let bestDist = Infinity;
+    for (const [id, d] of distMap) {
+      if (!visited.has(id) && d < bestDist) {
+        bestDist = d;
+        bestId = id;
       }
     }
+    return bestId;
+  };
 
-    if (currentId === null || currentDist === Infinity) break;
-    if (currentId === endZoneId) break;
+  while (true) {
+    // Forward Expansion
+    const fId = getNextNode(forwardDist, forwardVisited);
+    if (!fId) break;
+    forwardVisited.add(fId);
 
-    unvisited.delete(currentId);
-    const currentZone = zones.get(currentId)!;
-
-    for (const neighborId of currentZone.adjacentZones) {
-      if (!unvisited.has(neighborId)) continue;
+    const fZone = zones.get(fId)!;
+    for (const neighborId of fZone.adjacentZones) {
       const neighbor = zones.get(neighborId);
       if (!neighbor) continue;
-
-      // Edge weight = congestion ratio of the destination zone
-      // Add a small base weight (0.1) so zero-congestion paths still have cost
-      const edgeWeight = DIJKSTRA_BASE_EDGE_WEIGHT + congestionRatio(neighbor.currentOccupancy, neighbor.capacity);
-      const tentativeDist = currentDist + edgeWeight;
-
-      if (tentativeDist < (distances.get(neighborId) ?? Infinity)) {
-        distances.set(neighborId, tentativeDist);
-        previous.set(neighborId, currentId);
+      const weight = DIJKSTRA_BASE_EDGE_WEIGHT + (neighbor.currentOccupancy / neighbor.capacity);
+      const newDist = (forwardDist.get(fId) ?? 0) + weight;
+      if (newDist < (forwardDist.get(neighborId) ?? Infinity)) {
+        forwardDist.set(neighborId, newDist);
+        forwardPrev.set(neighborId, fId);
+      }
+      if (backwardVisited.has(neighborId)) {
+        const total = newDist + (backwardDist.get(neighborId) ?? 0);
+        if (total < minPathLen) {
+          minPathLen = total;
+          meetingNode = neighborId;
+        }
       }
     }
+
+    // Backward Expansion
+    const bId = getNextNode(backwardDist, backwardVisited);
+    if (!bId) break;
+    backwardVisited.add(bId);
+
+    const bZone = zones.get(bId)!;
+    // For backward search on un-directed graph (adjacentZones works both ways)
+    for (const neighborId of bZone.adjacentZones) {
+      const neighbor = zones.get(neighborId);
+      if (!neighbor) continue;
+      // In backward search, the cost of going TO bId is the cost of bId itself
+      const weight = DIJKSTRA_BASE_EDGE_WEIGHT + (bZone.currentOccupancy / bZone.capacity);
+      const newDist = (backwardDist.get(bId) ?? 0) + weight;
+      if (newDist < (backwardDist.get(neighborId) ?? Infinity)) {
+        backwardDist.set(neighborId, newDist);
+        backwardPrev.set(neighborId, bId);
+      }
+      if (forwardVisited.has(neighborId)) {
+        const total = newDist + (forwardDist.get(neighborId) ?? 0);
+        if (total < minPathLen) {
+          minPathLen = total;
+          meetingNode = neighborId;
+        }
+      }
+    }
+
+    // Termination condition
+    if (meetingNode && (forwardDist.get(fId) ?? 0) + (backwardDist.get(bId) ?? 0) >= minPathLen) break;
   }
+
+  if (!meetingNode) return null;
 
   // Reconstruct path
   const path: Array<{ zoneId: string; zoneName: string; status: ZoneStatus; waitTimeMinutes: number }> = [];
-  let current: string | null = endZoneId;
-
-  while (current !== null) {
-    const zone = zones.get(current)!;
-    path.unshift({
-      zoneId: current,
-      zoneName: zone.name,
-      status: zone.status,
-      waitTimeMinutes: zone.waitTimeMinutes,
-    });
-    current = previous.get(current) ?? null;
+  
+  // Reconstruct from start to meetingNode
+  let curr: string | null = meetingNode;
+  while (curr) {
+    const z = zones.get(curr)!;
+    path.unshift({ zoneId: curr, zoneName: z.name, status: z.status, waitTimeMinutes: z.waitTimeMinutes });
+    curr = forwardPrev.get(curr) ?? null;
   }
 
-  // Verify path starts at the start zone
-  if (path.length === 0 || path[0]?.zoneId !== startZoneId) {
-    return null; // No path found
+  // Reconstruct from meetingNode to end
+  curr = backwardPrev.get(meetingNode) ?? null;
+  while (curr) {
+    const z = zones.get(curr)!;
+    path.push({ zoneId: curr, zoneName: z.name, status: z.status, waitTimeMinutes: z.waitTimeMinutes });
+    curr = backwardPrev.get(curr) ?? null;
   }
 
-  return {
-    path,
-    totalCongestionScore: Math.round((distances.get(endZoneId) ?? 0) * 100) / 100,
-  };
+  return { path, totalCongestionScore: Math.round(minPathLen * 100) / 100 };
 }
