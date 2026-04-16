@@ -62,7 +62,7 @@ export default function LoginForm() {
               className="login-form__input"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="staff@crowdshield.app"
+              placeholder="admin@crowdshield.com"
               required
               aria-required="true"
               autoComplete="email"
@@ -80,7 +80,7 @@ export default function LoginForm() {
               className="login-form__input"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="admin123"
               required
               aria-required="true"
               autoComplete="current-password"

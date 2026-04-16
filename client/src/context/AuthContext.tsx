@@ -43,6 +43,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     setError(null);
     try {
+      // ─── Universal Demo Bypass ───
+      // Allows judges to enter the dashboard even if Firebase is unseeded.
+      if (email === 'admin@crowdshield.com' && password === 'admin123') {
+        setUser({
+          email: 'admin@crowdshield.com',
+          uid: 'demo-admin-tactical',
+          emailVerified: true
+        } as User);
+        setLoading(false);
+        return;
+      }
+
       if (!firebaseAuth) throw new Error('Auth disabled in Mock Mode');
       await signInWithEmailAndPassword(firebaseAuth, email, password);
     } catch (err) {
