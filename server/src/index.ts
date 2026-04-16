@@ -74,7 +74,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // ─── Global error handler ───
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction): void => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: any): void => {
   logError('Unhandled error', err);
   res.status(500).json({
     error: process.env.NODE_ENV === 'production'
