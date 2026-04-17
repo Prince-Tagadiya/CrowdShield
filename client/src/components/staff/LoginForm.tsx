@@ -29,17 +29,10 @@ export default function LoginForm() {
       console.log('Login successful');
       navigate('/staff');
     } catch (err: any) {
-      console.error('Firebase Auth Failure Diagnostics:', {
-        code: err.code,
-        message: err.message,
-        emailAttempt: email
-      });
-      
-      const errorMessage = err.code === 'auth/user-not-found' 
-        ? 'User not found in Firebase. Please create this account in the Google Cloud Console.'
-        : 'Invalid email or password. Please try again.';
-        
-      setFormError(errorMessage);
+      console.error('Firebase Auth Failure Diagnostics:', err);
+      // Display the raw error code to help the user identify missing Firebase Console settings
+      const rawCode = err.code || 'unknown-error';
+      setFormError(`Auth Error [${rawCode}]: ${err.message || 'Check Firebase Console settings.'}`);
     } finally {
       setSubmitting(false);
     }
