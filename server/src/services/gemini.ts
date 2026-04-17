@@ -21,7 +21,7 @@ interface GeminiProvider {
 }
 
 // Initialize: robust key detection across different platform envs
-const FINAL_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "AIzaSyDNb_nDZMVc1WfarMb9arJqtxynYVTggNE";
+const FINAL_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
 function createRobustProvider(): GeminiProvider | null {
   if (!FINAL_KEY) {
