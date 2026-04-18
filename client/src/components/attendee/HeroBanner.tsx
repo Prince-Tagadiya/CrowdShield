@@ -68,7 +68,7 @@ export default function HeroBanner() {
       <div className="hero-visual">
         <div className="hero-image-wrapper">
           <img 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-AcXgCYpDK0C3jMMcZHt2AAcIz5rPw9Npb5cmutry5_9ZzNRUzADPEPcteiKATLNtV3pZJVGkaXa7BGZ5eSVahyngy6XRZKuhRUPlo67ewZiPmimaDLsL0GO6-_oegex0ruzq3WAD2PoXt4hk3YDc0dbLHUq-lyY3v16UAvRkFPUIP58A9-Z9ZGB4xuS8wiGnu4d7SpG7ZOKKqIK8OI_22mjzHP0cjQ95H4Vdt79RwhjKlAS3uEd99WJHi05Oaj18gFCQjBBDAYE" 
+            src="/stadium_hero.png" 
             alt="Intelligent Stadium Heatmap visualization" 
           />
           <div className="visual-overlay-glow"></div>

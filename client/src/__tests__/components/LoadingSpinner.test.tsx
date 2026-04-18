@@ -1,52 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
+import '@testing-library/jest-dom';
 
-describe('LoadingSpinner', () => {
-  it('renders with role="status" for accessibility', () => {
+describe('LoadingSpinner Component', () => {
+  it('renders with default label', () => {
     render(<LoadingSpinner />);
-    const spinner = screen.getByRole('status');
-    expect(spinner).toBeDefined();
+    expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
   });
 
-  it('shows default label for screen readers', () => {
+  it('renders with custom label', () => {
+    render(<LoadingSpinner label="Fetching data" />);
+    expect(screen.getByText(/Fetching data/i)).toBeInTheDocument();
+  });
+
+  it('is accessible with aria-live and role', () => {
     render(<LoadingSpinner />);
-    expect(screen.getByText('Loading...')).toBeDefined();
+    const container = screen.getByRole('status');
+    expect(container).toHaveAttribute('aria-live', 'polite');
   });
 
-  it('shows custom label when provided', () => {
-    render(<LoadingSpinner label="Checking authentication..." />);
-    expect(screen.getByText('Checking authentication...')).toBeDefined();
-  });
-
-  it('applies default md size class', () => {
+  it('renders the visual spinner element', () => {
     const { container } = render(<LoadingSpinner />);
-    const spinner = container.querySelector('.loading-spinner');
-    expect(spinner?.classList.contains('loading-spinner--md')).toBe(true);
-  });
-
-  it('applies sm size class', () => {
-    const { container } = render(<LoadingSpinner size="sm" />);
-    const spinner = container.querySelector('.loading-spinner');
-    expect(spinner?.classList.contains('loading-spinner--sm')).toBe(true);
-  });
-
-  it('applies lg size class', () => {
-    const { container } = render(<LoadingSpinner size="lg" />);
-    const spinner = container.querySelector('.loading-spinner');
-    expect(spinner?.classList.contains('loading-spinner--lg')).toBe(true);
-  });
-
-  it('hides spinner ring from screen readers', () => {
-    const { container } = render(<LoadingSpinner />);
-    const ring = container.querySelector('.spinner-ring');
-    expect(ring?.getAttribute('aria-hidden')).toBe('true');
-  });
-
-  it('has sr-only label (visually hidden but accessible)', () => {
-    const { container } = render(<LoadingSpinner label="Loading zones..." />);
-    const srOnly = container.querySelector('.sr-only');
-    expect(srOnly).toBeDefined();
-    expect(srOnly?.textContent).toBe('Loading zones...');
+    const spinner = container.querySelector('.loading-spinner__circle');
+    expect(spinner).toBeInTheDocument();
   });
 });

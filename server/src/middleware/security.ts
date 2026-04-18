@@ -17,20 +17,11 @@ export function applySecurityMiddleware(app: Express): void {
     crossOriginEmbedderPolicy: false, // Required for Google Maps
   }));
 
-  // CORS configuration
-  const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? [(process.env.CORS_ORIGIN || '*')]
-    : ['http://localhost:5173', 'http://localhost:8080'];
-
+  // CORS: static files are served before this runs, so this only applies to /api/* routes.
+  // In production the frontend is co-hosted, so same-origin requests don't need CORS at all.
+  // External API consumers (mobile apps, etc.) are allowed by wildcard.
   app.use(cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (same-origin, server-to-server) or if wildcard is enabled
-      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS: Origin ${origin} not allowed`));
-      }
-    },
+    origin: true, // reflect the request Origin — works for same-origin + cross-origin
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],

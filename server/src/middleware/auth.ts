@@ -27,11 +27,22 @@ export async function requireAuth(
   }
 
   try {
-    // Mocking auth to allow local development functionality without full Firebase Admin credentials
+    // ─── Universal Demo Bypass ───
+    // Allows rapid testing with the known demo token string
+    if (idToken === 'demo-admin-tactical' || idToken === 'mock-token') {
+      req.auth = {
+        uid: 'demo-admin-tactical',
+        email: 'admin@crowdshield.com',
+        role: 'admin',
+      };
+      return next();
+    }
+
+    const decodedToken = await auth.verifyIdToken(idToken);
     req.auth = {
-      uid: 'mock-staff-uid',
-      email: 'admin@crowdshield.com',
-      role: 'admin',
+      uid: decodedToken.uid,
+      email: decodedToken.email ?? '',
+      role: (decodedToken.role as string) ?? 'staff',
     };
 
     next();

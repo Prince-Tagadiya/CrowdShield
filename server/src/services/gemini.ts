@@ -24,11 +24,38 @@ interface GeminiProvider {
 const FINAL_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
 function createRobustProvider(): GeminiProvider | null {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // ─── Production Mode: Vertex AI ───
+  if (isProduction) {
+    try {
+      logInfo('Initializing Vertex AI (Production mode)');
+      const vertex_ai = new VertexAI({ project: GCP_PROJECT, location: GCP_LOCATION });
+      const generativeModel = vertex_ai.getGenerativeModel({
+        model: GEMINI_MODEL,
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
+      });
+      return {
+        async generateContent(prompt: string): Promise<string> {
+          const result = await generativeModel.generateContent({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          });
+          const response = result.response;
+          return response.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        },
+      };
+    } catch (err) {
+      logError('Failed to initialize Vertex AI SDK', err);
+    }
+  }
+
+  // ─── Development Mode: Google AI SDK (Direct API Key) ───
   if (!FINAL_KEY) {
     logWarning('AI SIGNAL LOST: No Gemini key detected in any environment variable.');
     return null;
   }
   try {
+    logInfo('Initializing Google AI SDK (Development mode)');
     const genAI = new GoogleGenerativeAI(FINAL_KEY);
     return {
       async generateContent(prompt: string): Promise<string> {

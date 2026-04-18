@@ -15,7 +15,7 @@ const router = Router();
  */
 router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise<void> => {
   try {
-    const chaosZones = ['gate-a', 'concourse-main', 'stand-north'];
+    const chaosZones = ['zone-north-entry', 'zone-west-food', 'zone-sachin'];
     const now = Date.now();
     
     // 1. Flood zones
@@ -36,10 +36,10 @@ router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise
     const alertId = 'chaos-' + now;
     createAlert(alertId, {
       id: alertId,
-      zoneId: 'gate-a',
+      zoneId: 'zone-sachin',
       type: 'overcrowding',
       severity: 'critical',
-      description: 'SUDDEN CROWD SURGE DETECTED: Gate A is at 96% capacity with restricted outward flow. Stampede risk HIGH.',
+      description: 'SUDDEN CROWD SURGE DETECTED: Sachin Tendulkar Stand restrooms at 96% capacity. Restricted outward flow through South Gates. Stampede risk HIGH.',
       status: 'active',
       createdAt: now,
       createdBy: 'system-demo',
