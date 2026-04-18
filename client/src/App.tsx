@@ -66,7 +66,7 @@ export default function App() {
               </div>
               <div className="footer-bottom">
                 <p>© 2026 CrowdShield — Built for Google PromptWars</p>
-                <p style={{ marginTop: '8px', opacity: 0.7, fontSize: '0.85rem' }}>Version: v2.4 (Sockets Hotfix)</p>
+                <p style={{ marginTop: '8px', opacity: 0.7, fontSize: '0.85rem' }}>Version: v2.5 (Maps & AI Hotfix)</p>
               </div>
             </footer>
             {/* Floating simulation toggle for demo mode */}

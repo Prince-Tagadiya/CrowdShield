@@ -78,7 +78,7 @@ function attemptLoad(attempt: number): Promise<typeof google.maps> {
       clearTimeout(timeout);
       // Give Maps a moment to initialize its global
       const checkReady = (retries: number) => {
-        if (window.google?.maps) {
+        if (window.google?.maps?.importLibrary) {
           mapsLoadError = null;
           resolve(window.google.maps);
         } else if (retries > 0) {
