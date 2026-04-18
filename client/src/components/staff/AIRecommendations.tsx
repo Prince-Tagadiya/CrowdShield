@@ -7,11 +7,10 @@ import { getAIRecommendations } from '../../services/api';
  * Enhanced with priority indicators and visual hierarchy.
  */
 export default function AIRecommendations() {
-  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<'all' | 'fire' | 'police' | 'medical'>('all');
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -26,21 +25,6 @@ export default function AIRecommendations() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Assign priority colors based on position
-  const getPriorityClass = (index: number) => {
-    if (index === 0) return 'ai-rec--critical';
-    if (index === 1) return 'ai-rec--high';
-    if (index === 2) return 'ai-rec--medium';
-    return 'ai-rec--low';
-  };
-
-  const getPriorityLabel = (index: number) => {
-    if (index === 0) return 'CRITICAL';
-    if (index === 1) return 'HIGH';
-    if (index === 2) return 'MEDIUM';
-    return 'ADVISORY';
   };
 
   return (
@@ -66,38 +50,7 @@ export default function AIRecommendations() {
           disabled={loading}
           aria-busy={loading}
         >
-          {loading ? (
-            <>
-              <span className="ai-btn-spinner" aria-hidden="true" />
-              Analyzing...
-            </>
-        </button>
-      </div>
-
-      <div className="ai-recommendations__tabs">
-        <button 
-          className={`ai-tab ${activeCategory === 'all' ? 'active' : ''}`} 
-          onClick={() => setActiveCategory('all')}
-        >
-          🌐 Overall Center
-        </button>
-        <button 
-          className={`ai-tab ai-tab--fire ${activeCategory === 'fire' ? 'active' : ''}`} 
-          onClick={() => setActiveCategory('fire')}
-        >
-          🔥 Fire Dept
-        </button>
-        <button 
-          className={`ai-tab ai-tab--police ${activeCategory === 'police' ? 'active' : ''}`} 
-          onClick={() => setActiveCategory('police')}
-        >
-          🛡️ Police Op
-        </button>
-        <button 
-          className={`ai-tab ai-tab--medical ${activeCategory === 'medical' ? 'active' : ''}`} 
-          onClick={() => setActiveCategory('medical')}
-        >
-          🚑 Medical Unit
+          {loading ? 'Analyzing...' : '🤖 Generate Recommendations'}
         </button>
       </div>
 
@@ -118,9 +71,7 @@ export default function AIRecommendations() {
             </div>
           )}
           <div className="ai-recommendations__list">
-            {recommendations
-              .filter(rec => activeCategory === 'all' || (rec as any).category === activeCategory)
-              .map((rec: any, index) => (
+            {recommendations.map((rec: any, index) => (
               <div key={index} className={`ai-recommendations__item ai-rec--${rec.color_code?.toLowerCase() || 'yellow'}`}>
                 <div className="ai-rec__header">
                   <span className={`ai-rec__priority risk--${rec.risk_level?.toLowerCase().replace(' ', '-')}`}>
