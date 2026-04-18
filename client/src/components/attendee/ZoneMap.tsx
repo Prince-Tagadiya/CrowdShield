@@ -62,81 +62,90 @@ export default function ZoneMap() {
   }, []);
 
   // Initialize map
-  const initMap = useCallback(() => {
+  const initMap = useCallback(async () => {
     if (!mapRef.current || mapInstanceRef.current) return;
     if (!window.google?.maps) return;
 
-    mapInstanceRef.current = new google.maps.Map(mapRef.current, {
-      center: WANKHEDE_CENTER,
-      zoom: MAP_ZOOM,
-      mapTypeId: 'satellite',
-      mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: true,
-      zoomControl: true,
-      styles: [
-        { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-        { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-      ],
-    });
+    try {
+      const { Map } = await google.maps.importLibrary('maps') as google.maps.MapsLibrary;
+      
+      mapInstanceRef.current = new Map(mapRef.current, {
+        center: WANKHEDE_CENTER,
+        zoom: MAP_ZOOM,
+        mapTypeId: 'satellite',
+        mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+        zoomControl: true,
+      });
+      setMapInited(true);
+    } catch (e) {
+      console.error('Failed to init Map', e);
+    }
   }, []);
 
   // Init once Maps is ready
   useEffect(() => {
     if (mapsReady && !mapInstanceRef.current) {
       initMap();
-      setMapInited(true);
     }
   }, [mapsReady, initMap]);
 
   // Update markers when zone data changes
   useEffect(() => {
-    if (!mapInstanceRef.current || zones.length === 0) return;
+    if (!mapInstanceRef.current || zones.length === 0 || !mapInited) return;
 
-    // Clear existing markers
-    markersRef.current.forEach(m => m.setMap(null));
-    markersRef.current = [];
+    const updateMarkers = async () => {
+      // Clear existing markers
+      markersRef.current.forEach(m => (m.map = null));
+      markersRef.current = [];
 
-    zones.forEach(zone => {
-      const color = STATUS_COLORS[zone.status] ?? '#6b7280';
-      const pct = zone.capacity > 0
-        ? Math.round((zone.currentOccupancy / zone.capacity) * 100)
-        : 0;
+      const { AdvancedMarkerElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
+      const { InfoWindow } = await google.maps.importLibrary("maps") as google.maps.MapsLibrary;
 
-      const dot = document.createElement('div');
-      dot.style.width = '24px';
-      dot.style.height = '24px';
-      dot.style.backgroundColor = color;
-      dot.style.border = '2px solid white';
-      dot.style.borderRadius = '50%';
-      dot.style.opacity = '0.9';
-      dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      zones.forEach(zone => {
+        const color = STATUS_COLORS[zone.status] ?? '#6b7280';
+        const pct = zone.capacity > 0
+          ? Math.round((zone.currentOccupancy / zone.capacity) * 100)
+          : 0;
 
-      const marker = new google.maps.marker.AdvancedMarkerElement({
-        map: mapInstanceRef.current!,
-        position: zone.coordinates,
-        title: `${zone.name}: ${zone.status} (${pct}%, ${zone.waitTimeMinutes} min wait)`,
-        content: dot,
+        const dot = document.createElement('div');
+        dot.style.width = '24px';
+        dot.style.height = '24px';
+        dot.style.backgroundColor = color;
+        dot.style.border = '2px solid white';
+        dot.style.borderRadius = '50%';
+        dot.style.opacity = '0.9';
+        dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+
+        const marker = new AdvancedMarkerElement({
+          map: mapInstanceRef.current!,
+          position: zone.coordinates,
+          title: `${zone.name}: ${zone.status} (${pct}%, ${zone.waitTimeMinutes} min wait)`,
+          content: dot,
+        });
+
+        const infoWindow = new InfoWindow({
+          content: `
+            <div style="font-family: Inter, sans-serif; padding: 8px; color: #1e293b;">
+              <strong style="font-size: 14px;">${zone.name}</strong><br/>
+              <span style="color: ${color}; font-weight: 600;">● ${zone.status.toUpperCase()}</span><br/>
+              Occupancy: <strong>${pct}%</strong> (${zone.currentOccupancy}/${zone.capacity})<br/>
+              Wait: <strong>${zone.waitTimeMinutes} min</strong>
+            </div>
+          `,
+        });
+
+        marker.addListener('gmp-click', () => {
+          infoWindow.open(mapInstanceRef.current!, marker);
+        });
+
+        markersRef.current.push(marker);
       });
+    };
 
-      const infoWindow = new google.maps.InfoWindow({
-        content: `
-          <div style="font-family: Inter, sans-serif; padding: 8px; color: #1e293b;">
-            <strong style="font-size: 14px;">${zone.name}</strong><br/>
-            <span style="color: ${color}; font-weight: 600;">● ${zone.status.toUpperCase()}</span><br/>
-            Occupancy: <strong>${pct}%</strong> (${zone.currentOccupancy}/${zone.capacity})<br/>
-            Wait: <strong>${zone.waitTimeMinutes} min</strong>
-          </div>
-        `,
-      });
-
-      marker.addListener('click', () => {
-        infoWindow.open(mapInstanceRef.current!, marker);
-      });
-
-      markersRef.current.push(marker);
-    });
+    updateMarkers();
   }, [zones, mapInited]);
 
   if (loading) {

@@ -45,6 +45,7 @@ USER appuser
 
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV GEMINI_API_KEY=AIzaSyDNb_nDZMVc1WfarMb9arJqtxynYVTggNE
 
 EXPOSE 8080
 
