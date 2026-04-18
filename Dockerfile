@@ -34,8 +34,9 @@ VITE_GEMINI_API_KEY=AIzaSyDNb_nDZMVc1WfarMb9arJqtxynYVTggNE\n\
     cd client && \
     npm run build
 
-# 6. Global tool setup for runtime
-RUN npm install -g ts-node typescript
+# 6. Compile Server Logic
+RUN cd server && \
+    npm run build
 
 # 7. Final Security Hardening
 RUN addgroup -g 1001 -S appgroup && \
@@ -49,5 +50,5 @@ ENV GEMINI_API_KEY=AIzaSyDNb_nDZMVc1WfarMb9arJqtxynYVTggNE
 
 EXPOSE 8080
 
-# The Unbreakable Entrypoint
-CMD ["ts-node", "--transpile-only", "server/src/index.ts"]
+# High-Performance Production Entrypoint
+CMD ["node", "server/dist/index.js"]

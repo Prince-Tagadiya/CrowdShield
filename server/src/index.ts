@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -12,13 +12,13 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: parentEnvPath });
 }
 
-import { logInfo, logError } from './services/logger';
+import { logInfo, logError, logDebug } from './services/logger';
 import { applySecurityMiddleware, generalLimiter } from './middleware/security';
 import zoneRoutes from './routes/zones';
 import alertRoutes from './routes/alerts';
 import aiRoutes from './routes/ai';
 import healthRoutes from './routes/health';
-import simulateRoutes from './routes/simulate';
+import simulateRoutes, { handleSimulationTick } from './routes/simulate';
 import navigationRoutes from './routes/navigation';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -122,7 +122,7 @@ if (process.env.NODE_ENV === 'production' && clientDistPath) {
 }
 
 // ─── Global error handler ───
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction): void => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void => {
   logError('Unhandled error', err);
   res.status(500).json({
     error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
@@ -138,15 +138,11 @@ server.listen(PORT, '0.0.0.0', () => {
     static: clientDistPath ?? 'disabled (dev mode)',
   });
 
-  // ─── Automated Simulation Engine ───
-  // Shifts zone occupancies every 10 seconds to make the demo feel "alive"
-  // during judging or presentation without requiring manual clicks.
-  setInterval(async () => {
+
+  setInterval(() => {
     try {
-      const response = await fetch(`http://localhost:${PORT}/api/simulate/tick`, { method: 'POST' });
-      if (response.ok) {
-        logDebug('Automated simulation tick completed');
-      }
+      handleSimulationTick();
+      logDebug('Automated simulation tick completed');
     } catch (error) {
       // Quietly fail if the server is still booting or shutting down
     }

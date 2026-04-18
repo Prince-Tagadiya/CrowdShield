@@ -62,25 +62,55 @@ router.post('/chaos', async (_req: Request, res: Response): Promise<void> => {
 });
 
 /**
+ * Resets the stadium to a safe state.
+ */
+export async function resetSimulation(): Promise<void> {
+  const zones = getZones();
+  for (const id in zones) {
+    updateZone(id, {
+      currentOccupancy: Math.floor(zones[id].capacity * 0.2),
+      status: 'clear',
+      waitTimeMinutes: 1,
+      lastUpdated: Date.now()
+    });
+  }
+  clearAlerts();
+}
+
+/**
+ * Shifts all zone occupancies by a random ±1-8% to simulate real-time crowd movement.
+ */
+export function handleSimulationTick(): void {
+  const zonesData = getZones();
+  if (!zonesData || Object.keys(zonesData).length === 0) return;
+
+  for (const [id, data] of Object.entries(zonesData)) {
+    const zone = data as Zone;
+    const capacity = zone.capacity;
+    const maxShift = Math.max(1, Math.floor(capacity * 0.08));
+    const shift = Math.floor(Math.random() * (maxShift * 2 + 1)) - maxShift;
+    const newOccupancy = Math.max(0, Math.min(capacity, zone.currentOccupancy + shift));
+
+    const status = deriveStatus(newOccupancy, capacity);
+    const waitTimeMinutes = estimateWaitTime(newOccupancy, capacity, zone.type);
+
+    updateZone(id, {
+      currentOccupancy: newOccupancy,
+      status,
+      waitTimeMinutes,
+      lastUpdated: Date.now(),
+      updatedBy: 'simulation'
+    });
+  }
+}
+
+/**
  * POST /api/simulate/reset
  * Staff-only — resets the stadium to a safe state.
  */
 router.post('/reset', async (_req: Request, res: Response): Promise<void> => {
   try {
-    const zones = getZones();
-    
-    for (const id in zones) {
-      updateZone(id, {
-        currentOccupancy: Math.floor(zones[id].capacity * 0.2),
-        status: 'clear',
-        waitTimeMinutes: 1,
-        lastUpdated: Date.now()
-      });
-    }
-
-    // Clear alerts
-    clearAlerts();
-    
+    await resetSimulation();
     res.json({ message: 'Stadium reset to safe state ✅' });
   } catch (error) {
     res.status(500).json({ error: 'Reset failed' });
@@ -89,46 +119,13 @@ router.post('/reset', async (_req: Request, res: Response): Promise<void> => {
 
 /**
  * POST /api/simulate/tick
- * Public endpoint — shifts all zone occupancies by a random ±1-8% to simulate
- * real-time crowd movement. Call this on an interval from the client to make
- * the demo feel alive during judging.
+ * Public endpoint — shifts occupancies and returns the new state.
  */
 router.post('/tick', async (_req: Request, res: Response): Promise<void> => {
   try {
+    handleSimulationTick();
     const zonesData = getZones();
-
-    if (!zonesData || Object.keys(zonesData).length === 0) {
-      res.status(404).json({ error: 'No zones configured' });
-      return;
-    }
-
-    const updates: Record<string, unknown> = {};
-    const results: Array<{ id: string; name: string; occupancy: number; status: string }> = [];
-
-    for (const [id, data] of Object.entries(zonesData)) {
-      const zone = data as Zone;
-      const capacity = zone.capacity;
-
-      // Random walk: shift occupancy by -8% to +8% of capacity
-      const maxShift = Math.max(1, Math.floor(capacity * 0.08));
-      const shift = Math.floor(Math.random() * (maxShift * 2 + 1)) - maxShift;
-      const newOccupancy = Math.max(0, Math.min(capacity, zone.currentOccupancy + shift));
-
-      const status = deriveStatus(newOccupancy, capacity);
-      const waitTimeMinutes = estimateWaitTime(newOccupancy, capacity, zone.type);
-
-      updateZone(id, {
-        currentOccupancy: newOccupancy,
-        status,
-        waitTimeMinutes,
-        lastUpdated: Date.now(),
-        updatedBy: 'simulation'
-      });
-
-      results.push({ id, name: zone.name, occupancy: newOccupancy, status });
-    }
-
-    res.json({ updated: results.length, zones: results });
+    res.json({ updated: Object.keys(zonesData).length });
   } catch (error) {
     logError('Simulation tick error', error);
     res.status(500).json({ error: 'Simulation tick failed' });
