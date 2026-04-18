@@ -24,9 +24,12 @@ export default function HeroBanner() {
     };
   }, [zones]);
 
-  if (loading || !stats) {
+  if (loading) {
     return <section className="hero-banner hero-banner--loading" aria-busy="true" />;
   }
+
+  // If no stats but not loading, we still show the brand but with zeroed metrics
+  const displayStats = stats || { totalPeople: 0, totalCapacity: 0, overallPct: 0 };
 
   return (
     <section className="hero-banner" aria-label="CrowdShield Introduction">
@@ -54,12 +57,12 @@ export default function HeroBanner() {
         
         <div className="hero-metrics-brief">
           <div className="brief-item">
-            <strong>{stats.totalPeople.toLocaleString()}</strong>
+            <strong>{displayStats.totalPeople.toLocaleString()}</strong>
             <span>Active Fans</span>
           </div>
           <div className="brief-line"></div>
           <div className="brief-item">
-            <strong>{stats.overallPct}%</strong>
+            <strong>{displayStats.overallPct}%</strong>
             <span>Venue Occupancy</span>
           </div>
         </div>

@@ -1,0 +1,6 @@
+.git
+.gitignore
+node_modules
+dist
+# Include all environment files for build-time injection
+!**/.env*

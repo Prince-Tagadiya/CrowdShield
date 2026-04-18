@@ -34,11 +34,13 @@ export default function App() {
             <main className="app-main" id="main-content">
               <Routes>
                 <Route path="/" element={
-                  <div className="attendee-home">
-                    <HeroBanner />
-                    <ZoneMap />
-                    <ZoneStatusGrid />
-                  </div>
+                  <ErrorBoundary fallbackMessage="The dashboard encountered a rendering error. Please refresh for the latest live data.">
+                    <div className="attendee-home">
+                      <HeroBanner />
+                      <ZoneMap />
+                      <ZoneStatusGrid />
+                    </div>
+                  </ErrorBoundary>
                 } />
                 <Route path="/navigate" element={<NavigationPanel />} />
                 <Route path="/ask" element={

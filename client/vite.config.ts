@@ -27,7 +27,10 @@ function htmlEnvPlugin(): Plugin {
 }
 
 export default defineConfig({
+  // Root of the monorepo where .env resides
   envDir: path.resolve(__dirname, '..'),
+  // Fallback: also check current directory if root is missing
+  envPrefix: 'VITE_',
   plugins: [
     react(),
     htmlEnvPlugin(),

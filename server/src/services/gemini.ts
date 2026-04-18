@@ -26,10 +26,28 @@ const FINAL_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 function createRobustProvider(): GeminiProvider | null {
   const isProduction = process.env.NODE_ENV === 'production';
 
-  // ─── Production Mode: Vertex AI ───
+  // ─── Priority 1: Google AI SDK (Direct API Key) ───
+  // Most reliable in demo environments and portable across regions.
+  if (FINAL_KEY) {
+    try {
+      logInfo('Initializing Google AI SDK (Primary Provider)');
+      const genAI = new GoogleGenerativeAI(FINAL_KEY);
+      return {
+        async generateContent(prompt: string): Promise<string> {
+          const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+          const result = await model.generateContent(prompt);
+          return result.response.text() ?? '';
+        },
+      };
+    } catch (err) {
+      logError('Failed to initialize Gemini SDK', err);
+    }
+  }
+
+  // ─── Priority 2: Vertex AI (Production Cloud Identity) ───
   if (isProduction) {
     try {
-      logInfo('Initializing Vertex AI (Production mode)');
+      logInfo('Initializing Vertex AI (Fallback Provider)');
       const vertex_ai = new VertexAI({ project: GCP_PROJECT, location: GCP_LOCATION });
       const generativeModel = vertex_ai.getGenerativeModel({
         model: GEMINI_MODEL,
@@ -49,25 +67,8 @@ function createRobustProvider(): GeminiProvider | null {
     }
   }
 
-  // ─── Development Mode: Google AI SDK (Direct API Key) ───
-  if (!FINAL_KEY) {
-    logWarning('AI SIGNAL LOST: No Gemini key detected in any environment variable.');
-    return null;
-  }
-  try {
-    logInfo('Initializing Google AI SDK (Development mode)');
-    const genAI = new GoogleGenerativeAI(FINAL_KEY);
-    return {
-      async generateContent(prompt: string): Promise<string> {
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-        const result = await model.generateContent(prompt);
-        return result.response.text() ?? '';
-      },
-    };
-  } catch (err) {
-    logError('Failed to initialize Gemini SDK', err);
-    return null;
-  }
+  logWarning('AI SIGNAL LOST: No Gemini key or Vertex AI identity available.');
+  return null;
 }
 
 const provider: GeminiProvider | null = createRobustProvider();
@@ -92,14 +93,15 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
   throw new Error('Retry exhausted');
 }
 
-const SYSTEM_PROMPT = `You are CrowdShield — an advanced real-time AI Crowd Intelligence and Safety System.
-Your purpose is to act like a live control center.
+const STAFF_SYSTEM_PROMPT = `You are CrowdShield Command — High-Level Tactical Operations AI.
+Your purpose is to provide immediate, actionable, and data-driven assessments of the venue status for security staff.
 
-CORE BEHAVIOR:
+CORE DIRECTIVES:
 1. Every output must be instantly understandable and visually meaningful.
-2. ASSIGN COLORS: GREEN (Safe), YELLOW (Warning), RED (Critical).
-3. HIGHLIGHT THE MOST DANGEROUS ZONE FIRST.
+2. ASSIGN CLEAR RISK LEVELS: SAFE, WARNING, HIGH RISK, CRITICAL.
+3. HIGHLIGHT THE MOST CONGESTED ZONES FIRST.
 4. Provide insight + action + reasoning for every assessment.
+5. Focus on resource allocation, evacuation routes, and crowd density.
 
 Always return structured JSON ONLY in this format:
 {
@@ -107,11 +109,36 @@ Always return structured JSON ONLY in this format:
   "density": "string (e.g. 92%)",
   "risk_level": "SAFE | WARNING | HIGH RISK | CRITICAL",
   "prediction": "string summary of next 3-5 mins",
-  "action": "string tactical instruction",
+  "action": "string tactical instruction for staff",
   "reasoning": "string clear logic explanation",
   "alert_type": "CRITICAL | WARNING | SAFE",
   "color_code": "RED | YELLOW | GREEN"
 }`;
+
+const ATTENDEE_SYSTEM_PROMPT = `You are CrowdShield AI — The Intelligent Guardian of Wankhede Stadium.
+You provide high-precision crowd intelligence to attendees to ensure a safe and seamless match-day experience.
+
+VENUE CONTEXT:
+- Venue: Wankhede Stadium, Mumbai.
+- Layout: 8 main Stands (North, South, Sachin Tendulkar, Sunil Gavaskar, Vithal Divecha, Vijay Merchant, Garware Pavilion, MCA Stand).
+- Key Points: Gate A (North), Gate D (South), Food Courts in East/West corridors.
+
+CORE RESPONSIBILITIES:
+1. SAFETY FIRST: If any zone is 'critical', your high-priority mission is to divert the user away.
+2. EFFICIENCY: Suggest the least congested restrooms and food stalls based on LIVE data.
+3. PERSONALITY: Professional, alert, and helpful. Use 🏟️, 📊, ⚡.
+
+DATA GROUNDING:
+- You will be provided with LIVE zone occupancy percentages.
+- 0-40%: Clear.
+- 40-65%: Moderate.
+- 65-85%: Crowded.
+- 85%+: Critical/At-Capacity.
+
+MD FORMATTING:
+- Use **bold** for zones and wait times.
+- Use lists for instructions.
+- Keep responses under 4 sentences unless navigating.`;
 
 /**
  * Format zone data as a context string for Gemini.
@@ -119,7 +146,7 @@ Always return structured JSON ONLY in this format:
 function formatZoneContext(zones: Zone[]): string {
   return zones.map(z => {
     const pct = z.capacity > 0 ? Math.round((z.currentOccupancy / z.capacity) * 100) : 0;
-    return `- ${z.name} (${z.type}): ${z.currentOccupancy}/${z.capacity} (${pct}%), status: ${z.status}, wait: ${z.waitTimeMinutes} min`;
+    return `- ${z.name} (#${z.id}): ${z.currentOccupancy}/${z.capacity} (${pct}% Full), Status: ${z.status}, WAIT: ${z.waitTimeMinutes}min`;
   }).join('\n');
 }
 
@@ -157,14 +184,15 @@ export async function chatWithContext(
     ).join('\n') + '\n';
   }
 
-  const prompt = `${SYSTEM_PROMPT}
+  const prompt = `${ATTENDEE_SYSTEM_PROMPT}
 
-STADIUM STATUS:
+CURRENT STADIUM STATUS (GROUND TRUTH):
 ${zoneContext}
 ${conversationLog}
-ATTENDEE QUESTION: ${userMessage}
 
-Respond in simple, actionable language. Focus on safety and fastest routes:`;
+ATTENDEE REQUEST: ${userMessage}
+
+INSTRUCTION: Answer the attendee's request using the live data provided above. If you don't have the data for a specific question, be honest. Always prioritize safety.`;
 
   try {
     const text = await withRetry(() => provider.generateContent(prompt));
@@ -172,13 +200,13 @@ Respond in simple, actionable language. Focus on safety and fastest routes:`;
   } catch (error) {
     logError('Gemini chat failover triggered', error);
     
-    // ─── Tactical Failover Engine ───
-    // Build a realistic response based on the actual live data we have
-    const criticalZones = zones.filter(z => z.status === 'critical' || z.status === 'crowded');
-    if (criticalZones.length > 0) {
-      return `[TACTICAL ANALYSIS] I've detected a surge at ${criticalZones[0].name} (${Math.round((criticalZones[0].currentOccupancy / criticalZones[0].capacity) * 100)}% capacity). I recommend redirecting flow to the North Gates which are currently clear. I'm continuing to monitor all sectors.`;
+    // ─── Tactical Failover Engine (Emergency Mode Only) ───
+    // We only provide a data-backed fallback if the AI is genuinely unavailable.
+    const crowdedZones = zones.filter(z => z.status === 'critical' || z.status === 'crowded');
+    if (crowdedZones.length > 0) {
+      return `[SYSTEM UPDATE] Detection systems show higher density at **${crowdedZones[0].name}**. I recommend using alternative routes via the North Stands while I re-establish full tactical AI grounding.`;
     }
-    return "This is CrowdShield Live Intelligence. Venue status is currently STABLE. All entry points are showing less than 5 minutes wait time. How else can I assist with your coordination?";
+    return "CrowdShield Intelligence is online. I'm currently processing live sensor data for Wankhede Stadium. How can I assist with your coordination today?";
   }
 }
 
@@ -195,7 +223,7 @@ export async function generateRecommendations(
 
   const zoneContext = formatZoneContext(zones);
   const alertContext = formatAlertContext(alerts);
-  const prompt = `${SYSTEM_PROMPT}
+  const prompt = `${STAFF_SYSTEM_PROMPT}
 
 CURRENT LIVE ZONE DATA:
 ${zoneContext}

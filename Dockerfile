@@ -17,27 +17,22 @@ RUN npm install --no-audit --no-fund && \
 # 4. Copy entire source
 COPY . .
 
-# 5. Compile Client Assets with Secure Build Arguments
-ARG VITE_FIREBASE_API_KEY
-ARG VITE_FIREBASE_AUTH_DOMAIN
-ARG VITE_FIREBASE_PROJECT_ID
-ARG VITE_FIREBASE_STORAGE_BUCKET
-ARG VITE_FIREBASE_MESSAGING_SENDER_ID
-ARG VITE_FIREBASE_APP_ID
-ARG VITE_FIREBASE_DATABASE_URL
-ARG VITE_GEMINI_API_KEY
-ARG VITE_GOOGLE_MAPS_API_KEY
-
-RUN export VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY && \
-    export VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN && \
-    export VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID && \
-    export VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET && \
-    export VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID && \
-    export VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID && \
-    export VITE_FIREBASE_DATABASE_URL=$VITE_FIREBASE_DATABASE_URL && \
-    export VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY && \
-    export VITE_GOOGLE_MAPS_API_KEY=$VITE_GOOGLE_MAPS_API_KEY && \
-    cd client && npm run build
+# 5. Compile Client Assets
+# We bake the environment variables directly into a .env file to ensure Vite 
+# picks them up during the compilation step.
+RUN printf "\
+VITE_FIREBASE_API_KEY=AIzaSyDifc9j2f-Tj6I_ACkhRR6lvGmwiltdtgw\n\
+VITE_FIREBASE_AUTH_DOMAIN=crowdshield-3912c.firebaseapp.com\n\
+VITE_FIREBASE_PROJECT_ID=crowdshield-3912c\n\
+VITE_FIREBASE_STORAGE_BUCKET=crowdshield-3912c.firebasestorage.app\n\
+VITE_FIREBASE_MESSAGING_SENDER_ID=864518919258\n\
+VITE_FIREBASE_APP_ID=1:864518919258:web:e5ec5f046b6d49e1c57463\n\
+VITE_FIREBASE_DATABASE_URL=https://crowdshield-3912c-default-rtdb.firebaseio.com\n\
+VITE_GOOGLE_MAPS_API_KEY=AIzaSyC0g0ToC3WPYyJ7_QiE2hBoV_oKHx5NIMI\n\
+VITE_GEMINI_API_KEY=AIzaSyDNb_nDZMVc1WfarMb9arJqtxynYVTggNE\n\
+" > client/.env.production && \
+    cd client && \
+    npm run build
 
 # 6. Global tool setup for runtime
 RUN npm install -g ts-node typescript

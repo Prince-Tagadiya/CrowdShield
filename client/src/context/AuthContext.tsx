@@ -39,9 +39,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // ─── Universal Demo Bypass ───
       // Allows judges to enter the dashboard even if Firebase is unseeded.
-      if (email === 'admin@crowdshield.com' && password === 'admin123') {
+      if ((email === 'admin@crowdshield.com' || email === 'admin@test.com') && password === 'admin123') {
         const demoUser = {
-          email: 'admin@crowdshield.com',
+          email: email,
           uid: 'demo-admin-tactical',
           emailVerified: true,
           getIdToken: async () => 'demo-admin-tactical'
