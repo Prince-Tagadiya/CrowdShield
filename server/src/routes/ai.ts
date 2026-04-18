@@ -61,7 +61,7 @@ router.post(
       // Ensure the frontend always gets a valid response to avoid "Trouble connecting"
       const zones = await getAllZones();
       const criticalCount = zones.filter(z => z.status === 'critical').length;
-      const tacticalReply = `This is the CrowdShield Automated Tactical Response. I'm currently monitoring \${zones.length} zones and detect \${criticalCount} critical areas. Our safety teams are responding. How can I assist you with navigation?`;
+      const tacticalReply = `This is the CrowdShield Automated Tactical Response. I'm currently monitoring ${zones.length} zones and detect ${criticalCount} critical areas. Our safety teams are responding. How can I assist you with navigation?`;
       res.json({ reply: tacticalReply });
     }
   }
@@ -85,8 +85,8 @@ router.post(
       const criticalRec = recommendations.find((r: TacticRecommendation) => r.risk_level === 'CRITICAL' || r.risk_level === 'HIGH RISK');
       if (criticalRec) {
         broadcastNotification(
-          `🛡️ SAFETY ALERT: \${criticalRec.zone}`,
-          `Instruction: \${criticalRec.action}. Reasoning: \${criticalRec.prediction}`,
+          `🛡️ SAFETY ALERT: ${criticalRec.zone}`,
+          `Instruction: ${criticalRec.action}. Reasoning: ${criticalRec.prediction}`,
           criticalRec.risk_level === 'CRITICAL' ? 'emergency' : 'warning'
         );
       }
