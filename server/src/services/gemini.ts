@@ -89,7 +89,6 @@ function createRobustProvider(): GeminiProvider | null {
             model: GEMINI_MODEL,
             generationConfig: {
               responseMimeType: "application/json",
-              responseSchema: RECOMMENDATION_SCHEMA,
               temperature: 0.1,
             }
           });
@@ -305,7 +304,9 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
 
   try {
     const text = await withRetry(() => provider.generateContent(prompt));
-    const recommendations = JSON.parse(text);
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('No JSON array found in AI response');
+    const recommendations = JSON.parse(jsonMatch[0]);
     const recsArray = Array.isArray(recommendations) ? recommendations : [recommendations];
     
     // Sort by risk level (Critical first)
@@ -322,7 +323,7 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
       risk_level: 'WARNING', 
       prediction: 'Data unavailable', 
       action: 'Manual override recommended', 
-      reasoning: `AI Internal Error: ${errorMsg}. Verification of API Key or Regional availability required.`,
+      reasoning: `Technical Error: ${errorMsg}. Verification of API Key required.`,
       alert_type: 'WARNING', 
       color_code: 'YELLOW',
       category: 'general'
