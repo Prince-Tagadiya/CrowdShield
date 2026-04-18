@@ -1,62 +1,53 @@
 import { VertexAI } from '@google-cloud/vertexai';
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logInfo, logWarning, logError } from './logger';
 import type { Zone, Alert } from '../types';
 
-const RECOMMENDATION_SCHEMA = {
+const RECOMMENDATION_SCHEMA: any = {
   description: "A list of tactical assessments and crowd management recommendations",
-  type: SchemaType.ARRAY,
+  type: "array",
   items: {
-    type: SchemaType.OBJECT,
+    type: "object",
     properties: {
       zone: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Exact name of the stadium zone being addressed",
-        nullable: false,
       },
       density: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Estimated current occupancy percentage (e.g., '85%')",
-        nullable: false,
       },
       risk_level: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Risk assessment level",
         enum: ["CRITICAL", "HIGH RISK", "WARNING", "SAFE"],
-        nullable: false,
       },
       prediction: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Short-term forecast (next 5-10 minutes)",
-        nullable: false,
       },
       action: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Immediate direct instruction for staff or emergency teams",
-        nullable: false,
       },
       reasoning: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Brief data-backed explanation for this assessment",
-        nullable: false,
       },
       alert_type: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Category of the tactical priority",
         enum: ["CRITICAL", "WARNING", "SAFE"],
-        nullable: false,
       },
       color_code: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Visual indicator color",
         enum: ["RED", "YELLOW", "GREEN"],
-        nullable: false,
       },
       category: {
-        type: SchemaType.STRING,
+        type: "string",
         description: "Department responsible for this action",
         enum: ["general", "fire", "police", "medical"],
-        nullable: false,
       }
     },
     required: ["zone", "density", "risk_level", "prediction", "action", "reasoning", "alert_type", "color_code", "category"],
