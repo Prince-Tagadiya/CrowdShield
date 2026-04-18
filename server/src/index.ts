@@ -122,7 +122,7 @@ if (process.env.NODE_ENV === 'production' && clientDistPath) {
 }
 
 // ─── Global error handler ───
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void => {
+app.use((err: Error, _req: any, res: any, _next: any): void => {
   logError('Unhandled error', err);
   res.status(500).json({
     error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
