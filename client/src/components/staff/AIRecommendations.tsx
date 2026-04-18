@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getAIRecommendations } from '../../services/api';
+import { TacticRecommendation } from '../../types';
 
 /**
  * AI-generated crowd management recommendations for staff.
@@ -7,7 +8,7 @@ import { getAIRecommendations } from '../../services/api';
  * Enhanced with priority indicators and visual hierarchy.
  */
 export default function AIRecommendations() {
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<TacticRecommendation[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +72,7 @@ export default function AIRecommendations() {
             </div>
           )}
           <div className="ai-recommendations__list">
-            {recommendations.map((rec: any, index) => (
+            {recommendations.map((rec, index) => (
               <div key={index} className={`ai-recommendations__item ai-rec--${rec.color_code?.toLowerCase() || 'yellow'}`}>
                 <div className="ai-rec__header">
                   <span className={`ai-rec__priority risk--${rec.risk_level?.toLowerCase().replace(' ', '-')}`}>

@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { triageAlert } from '../services/gemini';
 import { logError } from '../services/logger';
-import type { Zone, Alert } from '../types';
+import type { Zone, Alert, AlertTriage } from '../types';
 
 const router = Router();
 
@@ -43,7 +43,7 @@ router.get('/', requireAuth, async (req: Request, res: Response): Promise<void> 
     alerts.sort((a, b) => b.createdAt - a.createdAt);
 
     res.json(alerts);
-  } catch (error) {
+  } catch (error: unknown) {
     logError('Error fetching alerts', error);
     res.status(500).json({ error: 'Failed to fetch alerts' });
   }
@@ -86,7 +86,7 @@ router.post(
       createAlert(alertId, { id: alertId, ...alert });
 
       // Debounced AI triage: only trigger if zone is crowded or critical
-      let triageResponse: any = null;
+      let triageResponse: AlertTriage | null = null;
       const zoneStatus = zoneData.status as string;
 
       if (zoneStatus === 'crowded' || zoneStatus === 'critical') {
@@ -97,7 +97,7 @@ router.post(
           ...(data as Omit<Zone, 'id'>),
         }));
 
-        triageResponse = await triageAlert({ id: alertId, ...alert }, zones);
+        triageResponse = await triageAlert({ id: alertId, ...alert } as Alert, zones);
       }
 
       res.status(201).json({
@@ -105,7 +105,7 @@ router.post(
         ...alert,
         ...(triageResponse ? { triageAdvice: triageResponse } : {}),
       });
-    } catch (error) {
+    } catch (error: unknown) {
       logError('Error creating alert', error);
       res.status(500).json({ error: 'Failed to create alert' });
     }
@@ -134,7 +134,7 @@ router.patch(
       });
 
       res.json({ id, status: 'acknowledged' });
-    } catch (error) {
+    } catch (error: unknown) {
       logError('Error acknowledging alert', error, { alertId: req.params.id });
       res.status(500).json({ error: 'Failed to acknowledge alert' });
     }
@@ -165,7 +165,7 @@ router.patch(
       });
 
       res.json({ id, status: 'resolved', resolvedAt: Date.now() });
-    } catch (error) {
+    } catch (error: unknown) {
       logError('Error resolving alert', error, { alertId: req.params.id });
       res.status(500).json({ error: 'Failed to resolve alert' });
     }

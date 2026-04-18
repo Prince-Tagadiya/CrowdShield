@@ -6,7 +6,7 @@ import { validate } from '../middleware/validation';
 import { aiChatLimiter, aiRecommendationsLimiter } from '../middleware/security';
 import { chatWithContext, generateRecommendations } from '../services/gemini';
 import { logError } from '../services/logger';
-import type { Zone, Alert } from '../types';
+import type { Zone, Alert, TacticRecommendation } from '../types';
 
 const router = Router();
 
@@ -56,12 +56,12 @@ router.post(
       const zones = await getAllZones();
       const reply = await chatWithContext(message, zones, history);
       res.json({ reply });
-    } catch (error) {
+    } catch (error: unknown) {
       logError('AI chat critical failure — falling back to tactical mock', error);
       // Ensure the frontend always gets a valid response to avoid "Trouble connecting"
       const zones = await getAllZones();
       const criticalCount = zones.filter(z => z.status === 'critical').length;
-      const tacticalReply = `This is the CrowdShield Automated Tactical Response. I'm currently monitoring ${zones.length} zones and detect ${criticalCount} critical areas. Our safety teams are responding. How can I assist you with navigation?`;
+      const tacticalReply = `This is the CrowdShield Automated Tactical Response. I'm currently monitoring \${zones.length} zones and detect \${criticalCount} critical areas. Our safety teams are responding. How can I assist you with navigation?`;
       res.json({ reply: tacticalReply });
     }
   }
@@ -82,17 +82,17 @@ router.post(
       const recommendations = await generateRecommendations(zones, alerts);
       
       // Auto-broadcast the most critical action to all attendees if its HIGH RISK or CRITICAL
-      const criticalRec = recommendations.find((r: any) => r.risk_level === 'CRITICAL' || r.risk_level === 'HIGH RISK');
+      const criticalRec = recommendations.find((r: TacticRecommendation) => r.risk_level === 'CRITICAL' || r.risk_level === 'HIGH RISK');
       if (criticalRec) {
         broadcastNotification(
-          `🛡️ SAFETY ALERT: ${criticalRec.zone}`,
-          `Instruction: ${criticalRec.action}. Reasoning: ${criticalRec.prediction}`,
+          `🛡️ SAFETY ALERT: \${criticalRec.zone}`,
+          `Instruction: \${criticalRec.action}. Reasoning: \${criticalRec.prediction}`,
           criticalRec.risk_level === 'CRITICAL' ? 'emergency' : 'warning'
         );
       }
 
       res.json({ recommendations, generatedAt: new Date().toISOString() });
-    } catch (error) {
+    } catch (error: unknown) {
       logError('AI recommendations error', error);
       res.status(500).json({ error: 'Failed to generate recommendations' });
     }

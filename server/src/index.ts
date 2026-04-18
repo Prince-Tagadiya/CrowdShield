@@ -19,6 +19,7 @@ import alertRoutes from './routes/alerts';
 import aiRoutes from './routes/ai';
 import healthRoutes from './routes/health';
 import simulateRoutes from './routes/simulate';
+import navigationRoutes from './routes/navigation';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { setIo, broadcastZones, broadcastAlerts } from './services/store';
@@ -105,6 +106,7 @@ app.use('/api/zones', zoneRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/simulate', simulateRoutes);
+app.use('/api/navigation', navigationRoutes);
 
 // ─── SPA Fallback (must be after all API routes) ───
 if (process.env.NODE_ENV === 'production' && clientDistPath) {
@@ -120,7 +122,7 @@ if (process.env.NODE_ENV === 'production' && clientDistPath) {
 }
 
 // ─── Global error handler ───
-app.use((err: Error, _req: express.Request, res: express.Response, _next: any): void => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction): void => {
   logError('Unhandled error', err);
   res.status(500).json({
     error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,

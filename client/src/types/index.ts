@@ -46,7 +46,27 @@ export interface Alert {
   createdAt: number;
   resolvedAt: number | null;
   resolvedBy: string | null;
-  triageAdvice?: any;
+  triageAdvice?: AlertTriage;
+}
+
+/** Tactical recommendation from AI */
+export interface TacticRecommendation {
+  zone: string;
+  density: string;
+  risk_level: 'CRITICAL' | 'HIGH RISK' | 'WARNING' | 'SAFE';
+  prediction: string;
+  action: string;
+  reasoning: string;
+  alert_type: 'CRITICAL' | 'WARNING' | 'SAFE';
+  color_code: 'RED' | 'YELLOW' | 'GREEN';
+  category: 'fire' | 'police' | 'medical' | 'general';
+}
+
+/** Triage advice from AI */
+export interface AlertTriage {
+  action: string;
+  priority?: string;
+  reasoning?: string;
 }
 
 /** Navigation result from Dijkstra algorithm */
@@ -67,6 +87,6 @@ export interface AIChatResponse {
 
 /** AI recommendations response */
 export interface AIRecommendationsResponse {
-  recommendations: any[];
+  recommendations: TacticRecommendation[];
   generatedAt: string;
 }

@@ -93,3 +93,23 @@ declare global {
     }
   }
 }
+
+/** Tactical recommendation from AI */
+export interface TacticRecommendation {
+  zone: string;
+  density: string;
+  risk_level: 'CRITICAL' | 'HIGH RISK' | 'WARNING' | 'SAFE';
+  prediction: string;
+  action: string;
+  reasoning: string;
+  alert_type: 'CRITICAL' | 'WARNING' | 'SAFE';
+  color_code: 'RED' | 'YELLOW' | 'GREEN';
+  category: 'fire' | 'police' | 'medical' | 'general';
+}
+
+/** Triage advice from AI */
+export interface AlertTriage {
+  action: string;
+  priority?: string;
+  reasoning?: string;
+}

@@ -1,9 +1,9 @@
 import { VertexAI } from '@google-cloud/vertexai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logInfo, logWarning, logError } from './logger';
-import type { Zone, Alert } from '../types';
+import type { Zone, Alert, TacticRecommendation, AlertTriage } from '../types';
 
-const RECOMMENDATION_SCHEMA: any = {
+const RECOMMENDATION_SCHEMA: Record<string, unknown> = {
   description: "A list of tactical assessments and crowd management recommendations",
   type: "array",
   items: {
@@ -79,8 +79,8 @@ const FINAL_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
  * then fails over to Vertex AI if the SDK is blocked or fails.
  */
 class DualEngineProvider implements GeminiProvider {
-  private googleAI: any = null;
-  private vertexAI: any = null;
+  private googleAI: GoogleGenerativeAI | null = null;
+  private vertexAI: VertexAI | null = null;
   private gcpProject = process.env.GOOGLE_CLOUD_PROJECT ?? process.env.GCLOUD_PROJECT ?? 'crowdshield-3912c';
   private gcpLocation = 'asia-south1';
 
@@ -104,7 +104,7 @@ class DualEngineProvider implements GeminiProvider {
     }
   }
 
-  async generateContent(prompt: string, config?: any): Promise<string> {
+  async generateContent(prompt: string, config?: Record<string, unknown>): Promise<string> {
     const isRecommendations = prompt.includes('Tactical Operations AI');
     
     // ─── Attempt 1: Google AI SDK ───
@@ -298,7 +298,7 @@ INSTRUCTION: Answer the attendee's request using the live data provided above. I
 export async function generateRecommendations(
   zones: Zone[],
   alerts: Alert[]
-): Promise<any[]> {
+): Promise<TacticRecommendation[]> {
   if (!provider) {
     return [{ 
       zone: 'ALL ZONES', 
@@ -330,19 +330,19 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error('No JSON array found in AI response');
     const recommendations = JSON.parse(jsonMatch[0]);
-    const recsArray = Array.isArray(recommendations) ? recommendations : [recommendations];
+    const recsArray: TacticRecommendation[] = Array.isArray(recommendations) ? recommendations : [recommendations];
     
     // Sort by risk level (Critical first)
-    return recsArray.sort((a: any, b: any) => {
+    return recsArray.sort((a, b) => {
       const order: Record<string, number> = { 'CRITICAL': 0, 'HIGH RISK': 1, 'WARNING': 2, 'SAFE': 3 };
       return (order[a.risk_level] ?? 99) - (order[b.risk_level] ?? 99);
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logError('Gemini multi-engine failure', error);
     const errorMsg = error instanceof Error ? error.message : 'AI pipeline failure';
     const isServiceBlocked = errorMsg.includes('API_KEY_SERVICE_BLOCKED') || errorMsg.includes('403');
     
-    return [{ 
+    const fallback: TacticRecommendation = { 
       zone: 'SYSTEM', 
       density: 'N/A', 
       risk_level: 'WARNING', 
@@ -354,7 +354,8 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
       alert_type: 'WARNING', 
       color_code: 'YELLOW',
       category: 'general'
-    }];
+    };
+    return [fallback];
   }
 }
 
@@ -364,11 +365,11 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
 export async function triageAlert(
   alert: Alert,
   zones: Zone[]
-): Promise<any> {
+): Promise<AlertTriage> {
   if (!provider) return { action: 'Manual triage required' };
 
   const zoneContext = formatZoneContext(zones);
-  const prompt = `${SYSTEM_PROMPT}
+  const prompt = `${STAFF_SYSTEM_PROMPT}
 
 A new alert has been created:
 - Type: ${alert.type}
@@ -385,7 +386,7 @@ Assess this alert and suggest 2-3 specific immediate response actions in JSON fo
     const text = await withRetry(() => provider.generateContent(prompt));
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON found');
-    return JSON.parse(jsonMatch[0]);
+    return JSON.parse(jsonMatch[0]) as AlertTriage;
   } catch (error) {
     logError('Gemini triage error', error);
     return { action: 'Automatic triage failed. Please assess manually.' };
