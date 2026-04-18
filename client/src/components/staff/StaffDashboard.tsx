@@ -7,8 +7,9 @@ import AlertManager from './AlertManager';
 import AIRecommendations from './AIRecommendations';
 import ErrorBoundary from '../shared/ErrorBoundary';
 import LoadingSpinner from '../shared/LoadingSpinner';
+import ZoneMap from '../attendee/ZoneMap';
 
-type TabKey = 'zones' | 'alerts' | 'ai';
+type TabKey = 'zones' | 'alerts' | 'ai' | 'map';
 
 export default function StaffDashboard() {
   const { user, loading } = useAuth();
@@ -46,6 +47,7 @@ export default function StaffDashboard() {
     { key: 'zones', label: 'Zone Control', icon: '📊' },
     { key: 'alerts', label: 'Alerts', icon: '🚨' },
     { key: 'ai', label: 'AI Tactical HUD', icon: '🤖' },
+    { key: 'map', label: 'Stadium Map', icon: '🏟️' },
   ];
 
   return (
@@ -102,6 +104,11 @@ export default function StaffDashboard() {
         {activeTab === 'ai' && (
           <ErrorBoundary fallbackMessage="AI recommendations encountered an error. Please try refreshing.">
             <AIRecommendations />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'map' && (
+          <ErrorBoundary fallbackMessage="The tactical map encountered an error.">
+            <ZoneMap />
           </ErrorBoundary>
         )}
       </div>

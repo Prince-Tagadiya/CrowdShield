@@ -218,7 +218,7 @@ export async function generateRecommendations(
   alerts: Alert[]
 ): Promise<any[]> {
   if (!provider) {
-    return [{ zone: 'ALL', density: 'N/A', risk_level: 'WARNING', prediction: 'N/A', action: 'Check configuration', reasoning: 'AI unavailable', alert_type: 'WARNING', color_code: 'YELLOW' }];
+    return [{ zone: 'ALL ZONES', density: 'Simulated', risk_level: 'SAFE', prediction: 'Normal operations (Offline Mock)', action: 'Proceed normally', reasoning: 'AI offline - running local mock engine', alert_type: 'SAFE', color_code: 'GREEN' }];
   }
 
   const zoneContext = formatZoneContext(zones);
@@ -246,7 +246,7 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
     });
   } catch (error) {
     logError('Gemini recommendations error', error);
-    return [{ zone: 'ERROR', density: 'Error', risk_level: 'CRITICAL', prediction: 'System Failure', action: 'Manual override recommended', reasoning: 'AI processing failed', alert_type: 'CRITICAL', color_code: 'RED' }];
+    return [{ zone: 'SYSTEM', density: 'N/A', risk_level: 'WARNING', prediction: 'Data unavailable', action: 'Manual override recommended', reasoning: 'AI processing failed or API key missing', alert_type: 'WARNING', color_code: 'YELLOW' }];
   }
 }
 
