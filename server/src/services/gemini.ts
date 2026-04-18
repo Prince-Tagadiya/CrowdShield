@@ -278,7 +278,17 @@ export async function generateRecommendations(
   alerts: Alert[]
 ): Promise<any[]> {
   if (!provider) {
-    return [{ zone: 'ALL ZONES', density: 'Simulated', risk_level: 'SAFE', prediction: 'Normal operations (Offline Mock)', action: 'Proceed normally', reasoning: 'AI offline - running local mock engine', alert_type: 'SAFE', color_code: 'GREEN' }];
+    return [{ 
+      zone: 'ALL ZONES', 
+      density: 'N/A', 
+      risk_level: 'SAFE', 
+      prediction: 'AI Signal Lost', 
+      action: 'Monitoring stadium via static sensors...', 
+      reasoning: 'No valid Gemini API Key or Vertex AI identity detected. System running in safe local-mock mode.',
+      alert_type: 'SAFE', 
+      color_code: 'GREEN',
+      category: 'general'
+    }];
   }
 
   const zoneContext = formatZoneContext(zones);

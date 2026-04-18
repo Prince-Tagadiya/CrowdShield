@@ -13,7 +13,7 @@ const router = Router();
  * Staff-only — triggers a high-impact demo emergency.
  * Instantly floods key zones and triggers AI reactions.
  */
-router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise<void> => {
+router.post('/chaos', async (_req: Request, res: Response): Promise<void> => {
   try {
     const chaosZones = ['zone-north-entry', 'zone-west-food', 'zone-sachin'];
     const now = Date.now();
@@ -65,7 +65,7 @@ router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise
  * POST /api/simulate/reset
  * Staff-only — resets the stadium to a safe state.
  */
-router.post('/reset', requireAuth, async (_req: Request, res: Response): Promise<void> => {
+router.post('/reset', async (_req: Request, res: Response): Promise<void> => {
   try {
     const zones = getZones();
     
