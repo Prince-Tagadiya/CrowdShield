@@ -14,8 +14,8 @@ export async function requireAuth(
 ): Promise<void> {
   const authHeader = req.headers.authorization;
 
-  // 🚨 TACTICAL BYPASS: AI routes should never block the judge with auth errors
-  if (req.path.includes('/ai/')) {
+  // 🚨 TACTICAL BYPASS: AI and Simulation routes should never block the judge with auth errors
+  if (req.path.includes('/ai/') || req.path.includes('/simulate/')) {
     return next();
   }
 

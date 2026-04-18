@@ -34,7 +34,14 @@ function createRobustProvider(): GeminiProvider | null {
       const genAI = new GoogleGenerativeAI(FINAL_KEY);
       return {
         async generateContent(prompt: string): Promise<string> {
-          const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+          const model = genAI.getGenerativeModel({ 
+            model: GEMINI_MODEL,
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.1,
+              maxOutputTokens: 1024
+            }
+          });
           const result = await model.generateContent(prompt);
           return result.response.text() ?? '';
         },
@@ -103,17 +110,18 @@ CORE DIRECTIVES:
 4. Provide insight + action + reasoning for every assessment.
 5. Focus on resource allocation, evacuation routes, and crowd density.
 
-Always return structured JSON ONLY in this format:
+Always return a JSON ARRAY of objects. Each object must strictly follow this format:
 {
-  "zone": "string",
-  "density": "string (e.g. 92%)",
-  "risk_level": "SAFE | WARNING | HIGH RISK | CRITICAL",
-  "prediction": "string summary of next 3-5 mins",
-  "action": "string tactical instruction for staff",
-  "reasoning": "string clear logic explanation",
+  "zone": "string (Zone Name)",
+  "density": "string (Current percentage, e.g. 85%)",
+  "risk_level": "CRITICAL | HIGH RISK | WARNING | SAFE",
+  "prediction": "string (Short forecast)",
+  "action": "string (Immediate tactical order)",
+  "reasoning": "string (Data-backed explanation)",
   "alert_type": "CRITICAL | WARNING | SAFE",
   "color_code": "RED | YELLOW | GREEN"
-}`;
+}
+Output should be a valid JSON array only. No markdown, no preamble.`;
 
 const ATTENDEE_SYSTEM_PROMPT = `You are CrowdShield AI — The Intelligent Guardian of Wankhede Stadium.
 You provide high-precision crowd intelligence to attendees to ensure a safe and seamless match-day experience.
@@ -235,12 +243,15 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
 
   try {
     const text = await withRetry(() => provider.generateContent(prompt));
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) throw new Error('No JSON array found in AI response');
-    const recommendations = JSON.parse(jsonMatch[0]);
+    // Support both raw JSON and markdown-wrapped JSON
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const recommendations = JSON.parse(cleanJson);
+    
+    // If AI returned a single object, wrap it in an array
+    const recsArray = Array.isArray(recommendations) ? recommendations : [recommendations];
     
     // Sort by risk level (Critical first)
-    return recommendations.sort((a: any, b: any) => {
+    return recsArray.sort((a: any, b: any) => {
       const order: Record<string, number> = { 'CRITICAL': 0, 'HIGH RISK': 1, 'WARNING': 2, 'SAFE': 3 };
       return (order[a.risk_level] ?? 99) - (order[b.risk_level] ?? 99);
     });
