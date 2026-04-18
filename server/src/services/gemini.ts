@@ -74,61 +74,84 @@ interface GeminiProvider {
 // Initialize: robust key detection across different platform envs
 const FINAL_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
-function createRobustProvider(): GeminiProvider | null {
-  const isProduction = process.env.NODE_ENV === 'production';
+/**
+ * Dual-Engine Provider that attempts Google AI SDK first, 
+ * then fails over to Vertex AI if the SDK is blocked or fails.
+ */
+class DualEngineProvider implements GeminiProvider {
+  private googleAI: any = null;
+  private vertexAI: any = null;
+  private gcpProject = process.env.GOOGLE_CLOUD_PROJECT ?? process.env.GCLOUD_PROJECT ?? 'crowdshield-3912c';
+  private gcpLocation = 'asia-south1';
 
-  // ─── Priority 1: Google AI SDK (Direct API Key) ───
-  // Most reliable in demo environments and portable across regions.
-  if (FINAL_KEY) {
+  constructor() {
+    // Stage 1: Google AI SDK
+    if (FINAL_KEY) {
+      try {
+        logInfo('Staging Google AI SDK (Core Engine)');
+        this.googleAI = new GoogleGenerativeAI(FINAL_KEY);
+      } catch (err) {
+        logError('Failed to stage Google AI SDK', err);
+      }
+    }
+
+    // Stage 2: Vertex AI
     try {
-      logInfo('Initializing Google AI SDK (Primary Provider)');
-      const genAI = new GoogleGenerativeAI(FINAL_KEY);
-      return {
-        async generateContent(prompt: string): Promise<string> {
-          const model = genAI.getGenerativeModel({ 
-            model: GEMINI_MODEL,
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1,
-            }
-          });
-          const result = await model.generateContent(prompt);
-          return result.response.text() ?? '';
-        },
-      };
+      logInfo('Staging Vertex AI (Fallback Engine)');
+      this.vertexAI = new VertexAI({ project: this.gcpProject, location: this.gcpLocation });
     } catch (err) {
-      logError('Failed to initialize Gemini SDK', err);
+      logError('Failed to stage Vertex AI SDK', err);
     }
   }
 
-  // ─── Priority 2: Vertex AI (Production Cloud Identity) ───
-  if (isProduction) {
-    try {
-      logInfo('Initializing Vertex AI (Fallback Provider)');
-      const vertex_ai = new VertexAI({ project: GCP_PROJECT, location: GCP_LOCATION });
-      const generativeModel = vertex_ai.getGenerativeModel({
-        model: GEMINI_MODEL,
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
-      });
-      return {
-        async generateContent(prompt: string): Promise<string> {
-          const result = await generativeModel.generateContent({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          });
-          const response = result.response;
-          return response.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-        },
-      };
-    } catch (err) {
-      logError('Failed to initialize Vertex AI SDK', err);
+  async generateContent(prompt: string, config?: any): Promise<string> {
+    const isRecommendations = prompt.includes('Tactical Operations AI');
+    
+    // ─── Attempt 1: Google AI SDK ───
+    if (this.googleAI) {
+      try {
+        const model = this.googleAI.getGenerativeModel({ 
+          model: GEMINI_MODEL,
+          generationConfig: config || {
+            responseMimeType: "application/json",
+            temperature: 0.1,
+          }
+        });
+        const result = await model.generateContent(prompt);
+        return result.response.text() ?? '';
+      } catch (err: any) {
+        const isBlocked = err?.message?.includes('API_KEY_SERVICE_BLOCKED') || err?.status === 403;
+        if (isBlocked) {
+          logWarning('Google AI SDK BLOCKED (403/Forbidden). Attempting Vertex AI failover...');
+        } else {
+          logError('Google AI SDK Engine Failure', err);
+        }
+        // If not blocked but failed, still try fallback if available
+      }
     }
-  }
 
-  logWarning('AI SIGNAL LOST: No Gemini key or Vertex AI identity available.');
-  return null;
+    // ─── Attempt 2: Vertex AI ───
+    if (this.vertexAI) {
+      try {
+        logInfo('Executing Vertex AI Failover...');
+        const generativeModel = this.vertexAI.getGenerativeModel({
+          model: GEMINI_MODEL,
+          generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
+        });
+        const result = await generativeModel.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        });
+        return result.response.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+      } catch (err) {
+        logError('Vertex AI Fallback Engine Failure', err);
+      }
+    }
+
+    throw new Error('All AI engines exhausted. Please check Google Cloud Console to enable Generative Language API.');
+  }
 }
 
-const provider: GeminiProvider | null = createRobustProvider();
+const provider: GeminiProvider = new DualEngineProvider();
 
 /**
  * Retry wrapper with exponential backoff for Gemini API calls.
@@ -315,15 +338,19 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
       return (order[a.risk_level] ?? 99) - (order[b.risk_level] ?? 99);
     });
   } catch (error: any) {
-    logError('Gemini recommendations error', error);
+    logError('Gemini multi-engine failure', error);
     const errorMsg = error instanceof Error ? error.message : 'AI pipeline failure';
+    const isServiceBlocked = errorMsg.includes('API_KEY_SERVICE_BLOCKED') || errorMsg.includes('403');
+    
     return [{ 
       zone: 'SYSTEM', 
       density: 'N/A', 
       risk_level: 'WARNING', 
       prediction: 'Data unavailable', 
       action: 'Manual override recommended', 
-      reasoning: `Technical Error: ${errorMsg}. Verification of API Key required.`,
+      reasoning: isServiceBlocked 
+        ? `🚨 GOOGLE API BLOCKED: Your key exists but the "Generative Language API" is not enabled or restricted in Google Cloud Console. Enable it to restore AI insight.`
+        : `Technical Error: ${errorMsg}. Check logs for multi-engine failover details.`,
       alert_type: 'WARNING', 
       color_code: 'YELLOW',
       category: 'general'
