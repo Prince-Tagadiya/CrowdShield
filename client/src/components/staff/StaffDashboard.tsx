@@ -63,14 +63,14 @@ export default function StaffDashboard() {
             onClick={handleChaos} 
             disabled={!!demoAction}
           >
-            🚨 Start Emergency
+            {demoAction === 'Activating Chaos Mode...' ? '🚨 ACTIVATING...' : '🚨 Start Emergency'}
           </button>
           <button 
             className="btn-reset" 
             onClick={handleReset} 
             disabled={!!demoAction}
           >
-            🛡️ Safety Reset
+            {demoAction === 'Resetting Stadium...' ? '🛡️ RESETTING...' : '🛡️ Safety Reset'}
           </button>
         </div>
       </div>

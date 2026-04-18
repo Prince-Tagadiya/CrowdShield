@@ -11,6 +11,7 @@ import NavigationPanel from './components/attendee/NavigationPanel';
 import AIChatPanel from './components/attendee/AIChatPanel';
 import LoginForm from './components/staff/LoginForm';
 import StaffDashboard from './components/staff/StaffDashboard';
+import NotificationToast from './components/shared/NotificationToast';
 import './App.css';
 
 /**
@@ -30,6 +31,7 @@ export default function App() {
             <a href="#main-content" className="skip-link">
               Skip to main content
             </a>
+            <NotificationToast />
             <Header />
             <main className="app-main" id="main-content">
               <Routes>
@@ -66,7 +68,7 @@ export default function App() {
               </div>
               <div className="footer-bottom">
                 <p>© 2026 CrowdShield — Built for Google PromptWars</p>
-                <p style={{ marginTop: '8px', opacity: 0.7, fontSize: '0.85rem' }}>Version: v2.5 (Maps & AI Hotfix)</p>
+                <p style={{ marginTop: '8px', opacity: 0.7, fontSize: '0.85rem' }}>Version: v2.7 (Tactical Routing & Sockets)</p>
               </div>
             </footer>
             {/* Floating simulation toggle for demo mode */}

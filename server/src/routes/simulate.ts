@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getZones, getZone, updateZone, createAlert, clearAlerts } from '../services/store';
+import { getZones, getZone, updateZone, createAlert, clearAlerts, broadcastNotification } from '../services/store';
 import { deriveStatus, estimateWaitTime } from '../services/zone-calculator';
 import { logError } from '../services/logger';
 import type { Zone } from '../types';
@@ -46,6 +46,13 @@ router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise
       resolvedAt: null,
       resolvedBy: null
     });
+
+    // 3. Notify all attendees (Broadcasting)
+    broadcastNotification(
+      '🚨 EMERGENCY EVACUATION ADVISORY',
+      'High density detected in South Stands. ALL ATTENDEES are advised to use the North Stand Entry (Gate A) for exit. Follow staff instructions.',
+      'emergency'
+    );
 
     res.json({ message: 'Chaos mode activated 🚨' });
   } catch (error) {

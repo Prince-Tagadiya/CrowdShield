@@ -11,6 +11,7 @@ export default function AIRecommendations() {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<'all' | 'fire' | 'police' | 'medical'>('all');
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -70,7 +71,33 @@ export default function AIRecommendations() {
               <span className="ai-btn-spinner" aria-hidden="true" />
               Analyzing...
             </>
-          ) : '🤖 Generate Recommendations'}
+        </button>
+      </div>
+
+      <div className="ai-recommendations__tabs">
+        <button 
+          className={`ai-tab ${activeCategory === 'all' ? 'active' : ''}`} 
+          onClick={() => setActiveCategory('all')}
+        >
+          🌐 Overall Center
+        </button>
+        <button 
+          className={`ai-tab ai-tab--fire ${activeCategory === 'fire' ? 'active' : ''}`} 
+          onClick={() => setActiveCategory('fire')}
+        >
+          🔥 Fire Dept
+        </button>
+        <button 
+          className={`ai-tab ai-tab--police ${activeCategory === 'police' ? 'active' : ''}`} 
+          onClick={() => setActiveCategory('police')}
+        >
+          🛡️ Police Op
+        </button>
+        <button 
+          className={`ai-tab ai-tab--medical ${activeCategory === 'medical' ? 'active' : ''}`} 
+          onClick={() => setActiveCategory('medical')}
+        >
+          🚑 Medical Unit
         </button>
       </div>
 
@@ -91,7 +118,9 @@ export default function AIRecommendations() {
             </div>
           )}
           <div className="ai-recommendations__list">
-            {recommendations.map((rec: any, index) => (
+            {recommendations
+              .filter(rec => activeCategory === 'all' || (rec as any).category === activeCategory)
+              .map((rec: any, index) => (
               <div key={index} className={`ai-recommendations__item ai-rec--${rec.color_code?.toLowerCase() || 'yellow'}`}>
                 <div className="ai-rec__header">
                   <span className={`ai-rec__priority risk--${rec.risk_level?.toLowerCase().replace(' ', '-')}`}>
@@ -99,6 +128,11 @@ export default function AIRecommendations() {
                   </span>
                   <span className="ai-rec__zone">📍 {rec.zone}</span>
                   <span className="ai-rec__density">👥 {rec.density}</span>
+                  {rec.category && (
+                    <span className={`ai-rec__category ai-rec__category--${rec.category}`}>
+                      {rec.category.toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div className="ai-rec__body">
                   <div className="ai-rec__field">

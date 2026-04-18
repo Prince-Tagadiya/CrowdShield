@@ -2486,3 +2486,136 @@ body {
   }
 }
 
+
+/* ─── Notification Toast ─── */
+.notification-toast {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  display: flex;
+  gap: var(--space-md);
+  animation: toast-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.notification-toast--info { border-left: 4px solid var(--color-accent); }
+.notification-toast--warning { border-left: 4px solid var(--color-moderate); }
+.notification-toast--emergency { 
+  border-left: 4px solid var(--color-critical); 
+  background: hsla(0, 84%, 60%, 0.05);
+  border-color: hsla(0, 84%, 60%, 0.3);
+  animation: toast-emergency-pulse 2s infinite;
+}
+
+@keyframes toast-emergency-pulse {
+  0%, 100% { box-shadow: var(--shadow-lg); }
+  50% { box-shadow: 0 0 20px hsla(0, 84%, 60%, 0.2); }
+}
+
+.notification-toast__content {
+  flex: 1;
+}
+
+.notification-toast__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 4px;
+}
+
+.notification-toast--emergency .notification-toast__title {
+  color: var(--color-critical);
+}
+
+.notification-toast__message {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.notification-toast__time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.notification-toast__close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+
+.notification-toast__close:hover {
+  color: var(--color-text-primary);
+}
+
+/* ─── AI Category Badges ─── */
+.ai-rec__category {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-left: auto;
+  letter-spacing: 0.05em;
+}
+
+.ai-rec__category--fire { background: hsla(0, 100%, 50%, 0.15); color: #ff4d4d; border: 1px solid hsla(0, 100%, 50%, 0.3); }
+.ai-rec__category--police { background: hsla(217, 91%, 60%, 0.15); color: #4dadff; border: 1px solid hsla(217, 91%, 60%, 0.3); }
+.ai-rec__category--medical { background: hsla(142, 71%, 45%, 0.15); color: #4dff88; border: 1px solid hsla(142, 71%, 45%, 0.3); }
+.ai-rec__category--general { background: hsla(215, 20%, 65%, 0.15); color: var(--color-text-secondary); border: 1px solid hsla(215, 20%, 65%, 0.3); }
+
+/* ─── AI Tactical Tabs ─── */
+.ai-recommendations__tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding: 4px;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.ai-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.ai-tab:hover {
+  background: var(--color-bg-card-hover);
+  color: var(--color-text-primary);
+}
+
+.ai-tab.active {
+  background: var(--color-bg-card);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.ai-tab--fire.active { color: #ff4d4d; box-shadow: 0 0 10px hsla(0, 100%, 50%, 0.1); }
+.ai-tab--police.active { color: #4dadff; box-shadow: 0 0 10px hsla(217, 91%, 60%, 0.1); }
+.ai-tab--medical.active { color: #4dff88; box-shadow: 0 0 10px hsla(142, 71%, 45%, 0.1); }

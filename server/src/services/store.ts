@@ -153,6 +153,12 @@ export function broadcastAlerts() {
   }
 }
 
+export function broadcastNotification(title: string, message: string, type: 'info' | 'warning' | 'emergency' = 'info') {
+  if (ioInstance) {
+    ioInstance.emit('notification', { title, message, type, timestamp: Date.now() });
+  }
+}
+
 export function getZones() {
   return typeof memZones === 'object' ? memZones : {};
 }

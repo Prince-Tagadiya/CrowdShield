@@ -1,7 +1,67 @@
 import { VertexAI } from '@google-cloud/vertexai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { logInfo, logWarning, logError } from './logger';
 import type { Zone, Alert } from '../types';
+
+const RECOMMENDATION_SCHEMA = {
+  description: "A list of tactical assessments and crowd management recommendations",
+  type: SchemaType.ARRAY,
+  items: {
+    type: SchemaType.OBJECT,
+    properties: {
+      zone: {
+        type: SchemaType.STRING,
+        description: "Exact name of the stadium zone being addressed",
+        nullable: false,
+      },
+      density: {
+        type: SchemaType.STRING,
+        description: "Estimated current occupancy percentage (e.g., '85%')",
+        nullable: false,
+      },
+      risk_level: {
+        type: SchemaType.STRING,
+        description: "Risk assessment level",
+        enum: ["CRITICAL", "HIGH RISK", "WARNING", "SAFE"],
+        nullable: false,
+      },
+      prediction: {
+        type: SchemaType.STRING,
+        description: "Short-term forecast (next 5-10 minutes)",
+        nullable: false,
+      },
+      action: {
+        type: SchemaType.STRING,
+        description: "Immediate direct instruction for staff or emergency teams",
+        nullable: false,
+      },
+      reasoning: {
+        type: SchemaType.STRING,
+        description: "Brief data-backed explanation for this assessment",
+        nullable: false,
+      },
+      alert_type: {
+        type: SchemaType.STRING,
+        description: "Category of the tactical priority",
+        enum: ["CRITICAL", "WARNING", "SAFE"],
+        nullable: false,
+      },
+      color_code: {
+        type: SchemaType.STRING,
+        description: "Visual indicator color",
+        enum: ["RED", "YELLOW", "GREEN"],
+        nullable: false,
+      },
+      category: {
+        type: SchemaType.STRING,
+        description: "Department responsible for this action",
+        enum: ["general", "fire", "police", "medical"],
+        nullable: false,
+      }
+    },
+    required: ["zone", "density", "risk_level", "prediction", "action", "reasoning", "alert_type", "color_code", "category"],
+  },
+};
 
 /**
  * Gemini AI service for CrowdShield.
@@ -15,7 +75,7 @@ import type { Zone, Alert } from '../types';
 
 const GCP_PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? process.env.GCLOUD_PROJECT ?? 'crowdshield-3912c';
 const GCP_LOCATION = 'asia-south1';
-const GEMINI_MODEL = 'gemini-1.5-flash'; // Optimized for high-speed control center tasks
+const GEMINI_MODEL = 'gemini-1.5-flash-latest'; // Use the latest stable model
 interface GeminiProvider {
   generateContent(prompt: string): Promise<string>;
 }
@@ -38,8 +98,8 @@ function createRobustProvider(): GeminiProvider | null {
             model: GEMINI_MODEL,
             generationConfig: {
               responseMimeType: "application/json",
+              responseSchema: RECOMMENDATION_SCHEMA,
               temperature: 0.1,
-              maxOutputTokens: 1024
             }
           });
           const result = await model.generateContent(prompt);
@@ -119,7 +179,8 @@ Always return a JSON ARRAY of objects. Each object must strictly follow this for
   "action": "string (Immediate tactical order)",
   "reasoning": "string (Data-backed explanation)",
   "alert_type": "CRITICAL | WARNING | SAFE",
-  "color_code": "RED | YELLOW | GREEN"
+  "color_code": "RED | YELLOW | GREEN",
+  "category": "fire | police | medical | general"
 }
 Output should be a valid JSON array only. No markdown, no preamble.`;
 
@@ -243,11 +304,7 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
 
   try {
     const text = await withRetry(() => provider.generateContent(prompt));
-    // Support both raw JSON and markdown-wrapped JSON
-    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    const recommendations = JSON.parse(cleanJson);
-    
-    // If AI returned a single object, wrap it in an array
+    const recommendations = JSON.parse(text);
     const recsArray = Array.isArray(recommendations) ? recommendations : [recommendations];
     
     // Sort by risk level (Critical first)
@@ -255,9 +312,20 @@ Analyze the stadium and return a list of 3-5 tactical assessments in JSON array 
       const order: Record<string, number> = { 'CRITICAL': 0, 'HIGH RISK': 1, 'WARNING': 2, 'SAFE': 3 };
       return (order[a.risk_level] ?? 99) - (order[b.risk_level] ?? 99);
     });
-  } catch (error) {
+  } catch (error: any) {
     logError('Gemini recommendations error', error);
-    return [{ zone: 'SYSTEM', density: 'N/A', risk_level: 'WARNING', prediction: 'Data unavailable', action: 'Manual override recommended', reasoning: 'AI processing failed or API key missing', alert_type: 'WARNING', color_code: 'YELLOW' }];
+    const errorMsg = error instanceof Error ? error.message : 'AI pipeline failure';
+    return [{ 
+      zone: 'SYSTEM', 
+      density: 'N/A', 
+      risk_level: 'WARNING', 
+      prediction: 'Data unavailable', 
+      action: 'Manual override recommended', 
+      reasoning: `AI Internal Error: ${errorMsg}. Verification of API Key or Regional availability required.`,
+      alert_type: 'WARNING', 
+      color_code: 'YELLOW',
+      category: 'general'
+    }];
   }
 }
 

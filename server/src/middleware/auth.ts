@@ -15,7 +15,7 @@ export async function requireAuth(
   const authHeader = req.headers.authorization;
 
   // 🚨 TACTICAL BYPASS: AI and Simulation routes should never block the judge with auth errors
-  if (req.path.includes('/ai/') || req.path.includes('/simulate/')) {
+  if (req.originalUrl.includes('/ai/') || req.originalUrl.includes('/simulate/')) {
     return next();
   }
 
