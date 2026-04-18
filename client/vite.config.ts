@@ -27,7 +27,7 @@ function htmlEnvPlugin(): Plugin {
 }
 
 export default defineConfig({
-  envDir: path.resolve(__dirname),
+  envDir: path.resolve(__dirname, '..'),
   plugins: [
     react(),
     htmlEnvPlugin(),
@@ -68,15 +68,7 @@ export default defineConfig({
               cacheName: 'google-fonts',
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
-          },
-          {
-            urlPattern: /^https:\/\/maps\.googleapis\.com\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'google-maps',
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
-            },
-          },
+          }
         ],
       },
     }),

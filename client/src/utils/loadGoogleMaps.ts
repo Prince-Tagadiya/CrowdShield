@@ -64,7 +64,7 @@ function attemptLoad(attempt: number): Promise<typeof google.maps> {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,marker`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,marker&loading=async`;
     script.async = true;
     script.defer = true;
     script.setAttribute('data-google-maps', 'true');

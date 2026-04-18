@@ -27,12 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (useMockMode || !firebaseAuth) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
     const unsubscribe = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -55,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (!firebaseAuth) throw new Error('Auth disabled in Mock Mode');
       await signInWithEmailAndPassword(firebaseAuth, email, password);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sign in failed';

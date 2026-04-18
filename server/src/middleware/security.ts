@@ -19,13 +19,13 @@ export function applySecurityMiddleware(app: Express): void {
 
   // CORS configuration
   const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? [process.env.CORS_ORIGIN ?? ''].filter(Boolean)
+    ? [(process.env.CORS_ORIGIN || '*')]
     : ['http://localhost:5173', 'http://localhost:8080'];
 
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (same-origin, server-to-server)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (same-origin, server-to-server) or if wildcard is enabled
+      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: Origin ${origin} not allowed`));

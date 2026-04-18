@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ref, onValue } from 'firebase/database';
-import { firebaseDb } from '../services/firebase';
+import { socket } from '../services/socket';
 import type { Alert } from '../types';
 
 interface UseAlertsResult {
@@ -20,45 +19,44 @@ export function useAlerts(statusFilter?: string): UseAlertsResult {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!firebaseDb) {
-      setLoading(false);
-      return;
-    }
-
-    const alertsRef = ref(firebaseDb, 'alerts');
-
-    const unsubscribe = onValue(
-      alertsRef,
-      (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          let alertList: Alert[] = Object.entries(data).map(([id, val]) => ({
-            id,
-            ...(val as Omit<Alert, 'id'>),
-          }));
-
-          if (statusFilter) {
-            alertList = alertList.filter(a => a.status === statusFilter);
-          }
-
-          // Sort by creation time, newest first
-          alertList.sort((a, b) => b.createdAt - a.createdAt);
-          setAlerts(alertList);
-        } else {
-          setAlerts([]);
+    const handleAlertsUpdate = (data: any) => {
+      if (data) {
+        let alertList: Alert[] = Object.values(data);
+        if (statusFilter) {
+          alertList = alertList.filter(a => a.status === statusFilter);
         }
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        // Error logged for debugging; user sees the error state via UI
-        void err;
-        setError('Failed to load alerts');
-        setLoading(false);
+        alertList.sort((a, b) => b.createdAt - a.createdAt);
+        setAlerts(alertList);
+      } else {
+        setAlerts([]);
       }
-    );
+      setLoading(false);
+      setError(null);
+    };
 
-    return () => unsubscribe();
+    socket.on('alerts_update', handleAlertsUpdate);
+
+    // Initial fetch
+    let url = '/api/alerts';
+    if (statusFilter) {
+      url += `?status=${statusFilter}`;
+    }
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAlerts(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        setError('Failed to fetch initial alerts');
+      });
+
+    return () => {
+      socket.off('alerts_update', handleAlertsUpdate);
+    };
   }, [statusFilter]);
 
   return { alerts, loading, error };

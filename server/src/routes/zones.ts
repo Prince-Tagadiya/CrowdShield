@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { db } from '../services/firebase-admin';
+import { getZones, getZone, updateZone } from '../services/store';
 import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { deriveStatus, estimateWaitTime, findLeastCongestedPath } from '../services/zone-calculator';
@@ -24,8 +24,7 @@ export const navigationSchema = z.object({
  */
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   try {
-    const snapshot = await db.ref('zones').once('value');
-    const zonesData = snapshot.val();
+    const zonesData = getZones();
 
     if (!zonesData) {
       res.json([]);
@@ -58,8 +57,7 @@ router.patch(
       const { currentOccupancy } = req.body;
 
       // Get current zone data to access capacity and type
-      const snapshot = await db.ref(`zones/${id}`).once('value');
-      const zoneData = snapshot.val();
+      const zoneData = getZone(id);
 
       if (!zoneData) {
         res.status(404).json({ error: `Zone ${id} not found` });
@@ -81,7 +79,7 @@ router.patch(
         updatedBy: req.auth!.uid,
       };
 
-      await db.ref(`zones/${id}`).update(updates);
+      updateZone(id, updates);
 
       res.json({ id, ...updates });
     } catch (error) {
@@ -102,8 +100,7 @@ router.post(
     try {
       const { startZoneId, endZoneId } = req.body;
 
-      const snapshot = await db.ref('zones').once('value');
-      const zonesData = snapshot.val();
+      const zonesData = getZones();
 
       if (!zonesData) {
         res.status(404).json({ error: 'No zones configured' });

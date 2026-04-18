@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { db } from '../services/firebase-admin';
+import { getZones, getZone, getAlerts, getAlert, createAlert, updateAlert } from '../services/store';
 import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { triageAlert } from '../services/gemini';
@@ -23,8 +23,7 @@ export const createAlertSchema = z.object({
 router.get('/', requireAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const statusFilter = req.query.status as string | undefined;
-    const snapshot = await db.ref('alerts').once('value');
-    const alertsData = snapshot.val();
+    const alertsData = getAlerts();
 
     if (!alertsData) {
       res.json([]);
@@ -63,16 +62,14 @@ router.post(
       const { zoneId, type, severity, description } = req.body;
 
       // Verify the zone exists
-      const zoneSnapshot = await db.ref(`zones/${zoneId}`).once('value');
-      const zoneData = zoneSnapshot.val();
+      const zoneData = getZone(zoneId);
 
       if (!zoneData) {
         res.status(404).json({ error: `Zone ${zoneId} not found` });
         return;
       }
 
-      const alertRef = db.ref('alerts').push();
-      const alertId = alertRef.key!;
+      const alertId = 'alert-' + Date.now();
 
       const alert: Omit<Alert, 'id'> = {
         zoneId,
@@ -86,7 +83,7 @@ router.post(
         resolvedBy: null,
       };
 
-      await alertRef.set(alert);
+      createAlert(alertId, { id: alertId, ...alert });
 
       // Debounced AI triage: only trigger if zone is crowded or critical
       let triageResponse: any = null;
@@ -94,8 +91,7 @@ router.post(
 
       if (zoneStatus === 'crowded' || zoneStatus === 'critical') {
         // Fetch all zones for context
-        const allZonesSnapshot = await db.ref('zones').once('value');
-        const allZonesData = allZonesSnapshot.val() || {};
+        const allZonesData = getZones() || {};
         const zones: Zone[] = Object.entries(allZonesData).map(([id, data]) => ({
           id,
           ...(data as Omit<Zone, 'id'>),
@@ -126,14 +122,14 @@ router.patch(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const snapshot = await db.ref(`alerts/${id}`).once('value');
+      const alert = getAlert(id);
 
-      if (!snapshot.exists()) {
+      if (!alert) {
         res.status(404).json({ error: `Alert ${id} not found` });
         return;
       }
 
-      await db.ref(`alerts/${id}`).update({
+      updateAlert(id, {
         status: 'acknowledged',
       });
 
@@ -155,14 +151,14 @@ router.patch(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const snapshot = await db.ref(`alerts/${id}`).once('value');
+      const alert = getAlert(id);
 
-      if (!snapshot.exists()) {
+      if (!alert) {
         res.status(404).json({ error: `Alert ${id} not found` });
         return;
       }
 
-      await db.ref(`alerts/${id}`).update({
+      updateAlert(id, {
         status: 'resolved',
         resolvedAt: Date.now(),
         resolvedBy: req.auth!.uid,

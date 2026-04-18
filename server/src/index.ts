@@ -19,8 +19,32 @@ import aiRoutes from './routes/ai';
 import healthRoutes from './routes/health';
 import simulateRoutes from './routes/simulate';
 
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { setIo, broadcastZones, broadcastAlerts } from './services/store';
+
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '8080', 10);
+const server = createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+setIo(io);
+
+io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+  // give them initial state
+  broadcastZones();
+  broadcastAlerts();
+  
+  socket.on('disconnect', () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+  });
+});
 
 // Cloud Run sits behind a load balancer — trust proxy headers
 app.set('trust proxy', 1);
@@ -44,29 +68,41 @@ app.use('/api/simulate', simulateRoutes);
 // ─── Serve static frontend in production ───
 if (process.env.NODE_ENV === 'production') {
   try {
-    // Hard-coded absolute path for Docker container stability
-    const clientDistPath = '/app/client/dist';
-    const indexHtml = path.join(clientDistPath, 'index.html');
+    // Dynamic resolution that works both locally (ts-node) and in Docker
+    let clientDistPath = path.resolve(process.cwd(), 'client/dist');
+    let indexHtml = path.join(clientDistPath, 'index.html');
     
-    // Safety check: ensure we don't start a broken server
     if (!fs.existsSync(indexHtml)) {
-      logError('CRITICAL: Frontend index.html not found', { path: indexHtml });
+      // Try parent directory if we are running with CWD inside 'server'
+      clientDistPath = path.resolve(process.cwd(), '../client/dist');
+      indexHtml = path.join(clientDistPath, 'index.html');
+    }
+    
+    // Safety check: ensure we don't start a broken server session
+    if (!fs.existsSync(indexHtml)) {
+      logError('CRITICAL: Frontend index.html not found. Check build folder.', { path: clientDistPath });
     }
 
-    logInfo('Production mode: serving static files', { clientDistPath });
+    logInfo('Serving static files from:', { clientDistPath });
 
     app.use(express.static(clientDistPath, { 
-      maxAge: '1d',
-      fallthrough: true // Let it go to the SPA fallback if not found
+      maxAge: '1h',
+      fallthrough: true
     }));
 
     // SPA fallback — serve index.html for all non-API, non-file routes
     app.get('*', (req, res) => {
-      // Don't serve index.html for missing asset files (prevents MIME mismatch)
+      // 1. Never serve index.html for missing assets (prevents MIME type errors)
       if (req.path.includes('.') && !req.path.endsWith('.html')) {
-        return res.status(404).send('Asset not found');
+        return res.status(404).type('text/plain').send(`Asset not found: ${req.path}`);
       }
-      res.sendFile(indexHtml);
+      
+      // 2. Only serve index.html if it actually exists
+      if (fs.existsSync(indexHtml)) {
+        res.sendFile(indexHtml);
+      } else {
+        res.status(404).type('text/plain').send('Production assets not built. Run npm run build in client folder.');
+      }
     });
   } catch (err) {
     logError('Failed to initialize static routes', err);
@@ -84,7 +120,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: any): 
 });
 
 // ─── Start server ───
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   logInfo('CrowdShield server started', {
     port: PORT,
     environment: process.env.NODE_ENV ?? 'development',

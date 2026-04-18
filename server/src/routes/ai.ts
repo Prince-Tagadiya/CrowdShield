@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { db } from '../services/firebase-admin';
+import { getZones, getAlerts } from '../services/store';
 import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { aiChatLimiter, aiRecommendationsLimiter } from '../middleware/security';
@@ -22,8 +22,7 @@ export const chatSchema = z.object({
  * Helper: fetch all zones from RTDB.
  */
 async function getAllZones(): Promise<Zone[]> {
-  const snapshot = await db.ref('zones').once('value');
-  const data = snapshot.val();
+  const data = getZones();
   if (!data) return [];
   return Object.entries(data).map(([id, val]) => ({
     id,
@@ -35,8 +34,7 @@ async function getAllZones(): Promise<Zone[]> {
  * Helper: fetch active alerts from RTDB.
  */
 async function getActiveAlerts(): Promise<Alert[]> {
-  const snapshot = await db.ref('alerts').once('value');
-  const data = snapshot.val();
+  const data = getAlerts();
   if (!data) return [];
   return Object.entries(data)
     .map(([id, val]) => ({ id, ...(val as Omit<Alert, 'id'>) }))

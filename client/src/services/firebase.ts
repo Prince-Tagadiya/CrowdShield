@@ -17,14 +17,23 @@ const firebaseConfig = {
 };
 
 const isFirebaseConfigured = !!firebaseConfig.apiKey;
-const app: FirebaseApp | null = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
+
+// Log configuration status for debugging (without leaking full keys)
+if (isFirebaseConfigured) {
+  console.log('✅ Firebase initialized with API Key:', `${firebaseConfig.apiKey?.substring(0, 6)}...`);
+} else {
+  console.warn('⚠️ Firebase configuration missing! Check your .env file.');
+}
+
+const app: FirebaseApp = initializeApp(firebaseConfig);
 
 /** Firebase Auth instance */
-export const firebaseAuth = app ? getAuth(app) : null;
+export const firebaseAuth = getAuth(app);
 
 /** Firebase Realtime Database instance */
-export const firebaseDb = app ? getDatabase(app) : null;
+export const firebaseDb = getDatabase(app);
 
-export const useMockMode = !isFirebaseConfigured;
+// Always false to force real auth pipelines as requested by user
+export const useMockMode = false;
 
 export default app;

@@ -15,7 +15,7 @@ export function validate(schema: z.ZodType) {
       req.body = result.data;
       next();
     } else {
-      const fieldErrors = result.error.issues.map((issue: z.core.$ZodIssue) => ({
+      const fieldErrors = result.error.issues.map((issue: z.ZodIssue) => ({
         field: issue.path.join('.'),
         message: issue.message,
       }));

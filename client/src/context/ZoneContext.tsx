@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { ref, onValue } from 'firebase/database';
-import { firebaseDb, useMockMode } from '../services/firebase';
+import { socket } from '../services/socket';
+import { useMockMode } from '../services/firebase';
 import type { Zone } from '../types';
 
 interface ZoneContextValue {
@@ -50,39 +50,36 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
       return () => clearInterval(interval);
     }
 
-    if (!firebaseDb) {
-      setError('Firebase Realtime Database is not initialized.');
-      setLoading(false);
-      return;
-    }
-
-    const zonesRef = ref(firebaseDb, 'zones');
-
-    const unsubscribe = onValue(
-      zonesRef,
-      (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const zoneList: Zone[] = Object.entries(data).map(([id, val]) => ({
-            id,
-            ...(val as Omit<Zone, 'id'>),
-          }));
-          setZones(zoneList);
-        } else {
-          setZones([]);
-        }
-        setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        // Error surfaced in UI via the error state
-        void err;
-        setError('Failed to connect to live data. Retrying...');
-        setLoading(false);
+    const handleZonesUpdate = (data: any) => {
+      if (data) {
+        const zoneList: Zone[] = Object.values(data);
+        setZones(zoneList);
+      } else {
+        setZones([]);
       }
-    );
+      setLoading(false);
+      setError(null);
+    };
 
-    return () => unsubscribe();
+    socket.on('zones_update', handleZonesUpdate);
+
+    // Initial fetch
+    fetch('/api/zones')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setZones(data);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        setError('Failed to fetch initial zones via API.');
+      });
+
+    return () => {
+      socket.off('zones_update', handleZonesUpdate);
+    };
   }, []);
 
   const getZoneById = useMemo(() => {

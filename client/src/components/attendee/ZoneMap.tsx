@@ -24,7 +24,7 @@ export default function ZoneMap() {
   const { zones, loading } = useZones();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const [mapsReady, setMapsReady] = useState(!!window.google?.maps);
   const [mapInited, setMapInited] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -70,6 +70,7 @@ export default function ZoneMap() {
       center: WANKHEDE_CENTER,
       zoom: MAP_ZOOM,
       mapTypeId: 'satellite',
+      mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
@@ -103,18 +104,20 @@ export default function ZoneMap() {
         ? Math.round((zone.currentOccupancy / zone.capacity) * 100)
         : 0;
 
-      const marker = new google.maps.Marker({
+      const dot = document.createElement('div');
+      dot.style.width = '24px';
+      dot.style.height = '24px';
+      dot.style.backgroundColor = color;
+      dot.style.border = '2px solid white';
+      dot.style.borderRadius = '50%';
+      dot.style.opacity = '0.9';
+      dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+
+      const marker = new google.maps.marker.AdvancedMarkerElement({
         map: mapInstanceRef.current!,
         position: zone.coordinates,
         title: `${zone.name}: ${zone.status} (${pct}%, ${zone.waitTimeMinutes} min wait)`,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: color,
-          fillOpacity: 0.9,
-          strokeWeight: 2,
-          strokeColor: '#ffffff',
-          scale: 12,
-        },
+        content: dot,
       });
 
       const infoWindow = new google.maps.InfoWindow({

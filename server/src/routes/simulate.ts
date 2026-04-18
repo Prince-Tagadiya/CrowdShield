@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../services/firebase-admin';
+import { getZones, getZone, updateZone, createAlert, clearAlerts } from '../services/store';
 import { deriveStatus, estimateWaitTime } from '../services/zone-calculator';
 import { logError } from '../services/logger';
 import type { Zone } from '../types';
@@ -20,10 +20,10 @@ router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise
     
     // 1. Flood zones
     for (const zoneId of chaosZones) {
-      const zoneSnap = await db.ref(`zones/${zoneId}`).once('value');
-      if (zoneSnap.exists()) {
-        const capacity = zoneSnap.val().capacity || 1000;
-        await db.ref(`zones/${zoneId}`).update({
+      const zone = getZone(zoneId);
+      if (zone) {
+        const capacity = zone.capacity || 1000;
+        updateZone(zoneId, {
           currentOccupancy: Math.floor(capacity * 0.96),
           status: 'critical',
           waitTimeMinutes: 25,
@@ -33,14 +33,18 @@ router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise
     }
 
     // 2. Trigger high-priority alert
-    await db.ref('alerts').push().set({
+    const alertId = 'chaos-' + now;
+    createAlert(alertId, {
+      id: alertId,
       zoneId: 'gate-a',
       type: 'overcrowding',
       severity: 'critical',
       description: 'SUDDEN CROWD SURGE DETECTED: Gate A is at 96% capacity with restricted outward flow. Stampede risk HIGH.',
       status: 'active',
       createdAt: now,
-      createdBy: 'system-demo'
+      createdBy: 'system-demo',
+      resolvedAt: null,
+      resolvedBy: null
     });
 
     res.json({ message: 'Chaos mode activated 🚨' });
@@ -56,11 +60,10 @@ router.post('/chaos', requireAuth, async (_req: Request, res: Response): Promise
  */
 router.post('/reset', requireAuth, async (_req: Request, res: Response): Promise<void> => {
   try {
-    const snapshot = await db.ref('zones').once('value');
-    const zones = snapshot.val() || {};
+    const zones = getZones();
     
     for (const id in zones) {
-      await db.ref(`zones/${id}`).update({
+      updateZone(id, {
         currentOccupancy: Math.floor(zones[id].capacity * 0.2),
         status: 'clear',
         waitTimeMinutes: 1,
@@ -69,7 +72,7 @@ router.post('/reset', requireAuth, async (_req: Request, res: Response): Promise
     }
 
     // Clear alerts
-    await db.ref('alerts').remove();
+    clearAlerts();
     
     res.json({ message: 'Stadium reset to safe state ✅' });
   } catch (error) {
@@ -85,10 +88,9 @@ router.post('/reset', requireAuth, async (_req: Request, res: Response): Promise
  */
 router.post('/tick', async (_req: Request, res: Response): Promise<void> => {
   try {
-    const snapshot = await db.ref('zones').once('value');
-    const zonesData = snapshot.val();
+    const zonesData = getZones();
 
-    if (!zonesData) {
+    if (!zonesData || Object.keys(zonesData).length === 0) {
       res.status(404).json({ error: 'No zones configured' });
       return;
     }
@@ -108,16 +110,17 @@ router.post('/tick', async (_req: Request, res: Response): Promise<void> => {
       const status = deriveStatus(newOccupancy, capacity);
       const waitTimeMinutes = estimateWaitTime(newOccupancy, capacity, zone.type);
 
-      updates[`zones/${id}/currentOccupancy`] = newOccupancy;
-      updates[`zones/${id}/status`] = status;
-      updates[`zones/${id}/waitTimeMinutes`] = waitTimeMinutes;
-      updates[`zones/${id}/lastUpdated`] = Date.now();
-      updates[`zones/${id}/updatedBy`] = 'simulation';
+      updateZone(id, {
+        currentOccupancy: newOccupancy,
+        status,
+        waitTimeMinutes,
+        lastUpdated: Date.now(),
+        updatedBy: 'simulation'
+      });
 
       results.push({ id, name: zone.name, occupancy: newOccupancy, status });
     }
 
-    await db.ref().update(updates);
     res.json({ updated: results.length, zones: results });
   } catch (error) {
     logError('Simulation tick error', error);

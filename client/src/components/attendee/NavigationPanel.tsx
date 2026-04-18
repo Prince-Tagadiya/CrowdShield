@@ -35,7 +35,7 @@ export default function NavigationPanel() {
   // Map refs
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const polylineRef = useRef<google.maps.Polyline | null>(null);
 
   const sortedZones = useMemo(() =>
@@ -67,6 +67,7 @@ export default function NavigationPanel() {
       center: WANKHEDE_CENTER,
       zoom: 17,
       mapTypeId: 'satellite',
+      mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
@@ -109,18 +110,19 @@ export default function NavigationPanel() {
       const isEnd = index === result.path.length - 1;
       const color = STATUS_COLORS[step.status] ?? '#6b7280';
 
-      const marker = new google.maps.Marker({
+      const dot = document.createElement('div');
+      dot.style.width = isStart || isEnd ? '32px' : '20px';
+      dot.style.height = isStart || isEnd ? '32px' : '20px';
+      dot.style.backgroundColor = isStart ? '#22c55e' : isEnd ? '#ef4444' : color;
+      dot.style.border = `${isStart || isEnd ? 3 : 2}px solid white`;
+      dot.style.borderRadius = '50%';
+      dot.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+
+      const marker = new google.maps.marker.AdvancedMarkerElement({
         map: mapInstanceRef.current!,
         position: { lat: coords.lat, lng: coords.lng },
         title: `${isStart ? '🟢 START: ' : isEnd ? '🏁 END: ' : ''}${step.zoneName}`,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          fillColor: isStart ? '#22c55e' : isEnd ? '#ef4444' : color,
-          fillOpacity: 1,
-          strokeWeight: isStart || isEnd ? 3 : 2,
-          strokeColor: '#ffffff',
-          scale: isStart || isEnd ? 16 : 10,
-        },
+        content: dot,
       });
 
       const infoWindow = new google.maps.InfoWindow({
